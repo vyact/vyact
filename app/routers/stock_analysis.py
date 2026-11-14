@@ -30,6 +30,7 @@ from services.stock_analysis.financial_context import build_financial_chat_conte
 from services.stock_analysis.financial_store import get_financials
 from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
 from services.stock_analysis.news import fetch_news
+from services.stock_analysis.url_context import build_url_chat_context
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
 from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
@@ -469,6 +470,7 @@ async def build_stock_chat_prompts(body, prepared=None):
         contexts = ([prepared['financials'].get(public_symbol(symbol), '') for symbol in financial_symbols]
                     if prepared is not None else await asyncio.gather(*(build_financial_chat_context(symbol) for symbol in financial_symbols)))
         financial_context = "\n".join(context for context in contexts if context) + "\n"
+    url_context = await build_url_chat_context(body.question)
     prompt = (
         f"Response language: {body.language}\n"
         + (f"Selected group scope: {body.name}, market: {body.market}\n" if body.groups is not None else f"Selected instrument: {body.name} ({body.symbol}), market: {body.market}\n")
@@ -478,6 +480,7 @@ async def build_stock_chat_prompts(body, prepared=None):
         + group_context
         + financial_context
         + stock_chart_prompt(body.attachments)
+        + url_context
         + f"User question: {body.question}"
     )
     system_prompt = (

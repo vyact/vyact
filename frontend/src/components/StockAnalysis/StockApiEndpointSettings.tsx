@@ -10,6 +10,7 @@ import {INVESTOR_GROUPS} from './historyData';
 const PRICE_RESPONSE_FIELDS = ['day', 'open', 'high', 'low', 'close', 'volume', 'tradingValue', 'sharesOutstanding', 'marketCap', 'loanBalanceVolume', 'loanBalanceAmount', 'changePercent', 'investors', 'buyVolume', 'buyAmount', 'sellVolume', 'sellAmount', 'netVolume', 'netAmount'] as const;
 
 const RESPONSE_FIELDS: Record<StockApiKind, {field: string; label: string}[]> = {
+    earnings: [{field: 'frequency, period, fiscalYear, fiscalQuarter, currency, source, preliminary, originLink, receiptDate, values', label: 'earnings'}],
     prices: PRICE_RESPONSE_FIELDS.map(field => ({field, label: field})),
     quotes: ['symbol', 'date', 'price', 'changePercent', 'marketCap'].map(field => ({field: field === 'changePercent' ? 'change' : field, label: field})),
     symbols: ['symbol', 'name', 'preferred', 'exchange'].map(field => ({field, label: field})),

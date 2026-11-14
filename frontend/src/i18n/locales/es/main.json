@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "Abrir Naver Finance", "toss": "Abrir Toss Securities", "dart": "Abrir divulgaciones DART"},
     "chartActions": {
       "comparisonMode": "Modo de comparación",
       "price": "Precio",
@@ -2138,6 +2139,7 @@
       "deleteKeyError": "No se pudo eliminar la clave API.",
       "quotes": "Cotizaciones y capitalización",
       "responseFields": {
+        "earnings": "Añade resultados DART de períodos ausentes en Yahoo. Importes en KRW, anuales o de un trimestre individual. Incluye cierre, año/trimestre fiscal, fecha de recepción, enlace y estado preliminar. Excluye campos ext. URL vacía desactiva el suplemento.",
         "sharesOutstanding": "Acciones en circulación",
         "loanBalanceVolume": "Saldo de préstamos (acciones)",
         "loanBalanceAmount": "Saldo de préstamos (importe)",
@@ -2237,6 +2239,7 @@
       "sparkline": "Cierres del minigráfico",
       "marketIndices": "Índices bursátiles",
       "sectorMap": "Mapa sectorial",
+      "earnings": "Resultados adicionales (DART)",
       "url": "URL API (vacía = fuente integrada)",
       "method": "Método",
       "body": "JSON POST adicional (opcional)",

@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "เปิด Naver Finance", "toss": "เปิด Toss Securities", "dart": "เปิดประกาศ DART"},
     "chartActions": {
       "comparisonMode": "โหมดเปรียบเทียบ",
       "price": "ราคา",
@@ -2137,6 +2138,7 @@
       "deleteKeyError": "ลบคีย์ API ไม่สำเร็จ",
       "quotes": "ราคาหุ้นและมูลค่าตลาด",
       "responseFields": {
+        "earnings": "เพิ่มผล DART สำหรับงวดที่ Yahoo ไม่มี หน่วย KRW เป็นรายปีหรือไตรมาสเดี่ยว พร้อมวันสิ้นงวด ปี/ไตรมาสบัญชี วันรับเอกสาร ลิงก์และสถานะเบื้องต้น ไม่รวมฟิลด์ ext เว้น URL ว่างเพื่อปิด",
         "sharesOutstanding": "จำนวนหุ้นที่ออก",
         "loanBalanceVolume": "ยอดคงค้างยืมหุ้น (หุ้น)",
         "loanBalanceAmount": "ยอดคงค้างยืมหุ้น (มูลค่า)",
@@ -2236,6 +2238,7 @@
       "sparkline": "ราคาปิดกราฟย่อ",
       "marketIndices": "ดัชนีตลาด",
       "sectorMap": "แผนที่กลุ่มอุตสาหกรรม",
+      "earnings": "ผลประกอบการเพิ่มเติม (DART)",
       "url": "URL API (ว่าง = แหล่งเดิม)",
       "method": "วิธีส่งคำขอ",
       "body": "JSON POST เพิ่มเติม (ไม่บังคับ)",

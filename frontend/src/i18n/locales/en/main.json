@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "Open Naver Finance", "toss": "Open Toss Securities", "dart": "Open DART disclosures"},
     "chartActions": {
       "comparisonMode": "Comparison mode",
       "price": "Price",
@@ -2138,6 +2139,7 @@
       "deleteKeyError": "Could not delete the API key.",
       "quotes": "Stock quotes & market caps",
       "responseFields": {
+        "earnings": "DART earnings for periods missing from Yahoo. Amounts in KRW; annual and standalone quarterly income only. Include period end, fiscal year/quarter, receipt date, source link and preliminary status. No ext fields. Blank URL disables supplementation.",
         "sharesOutstanding": "Shares outstanding",
         "loanBalanceVolume": "Loan balance (shares)",
         "loanBalanceAmount": "Loan balance (amount)",
@@ -2237,6 +2239,7 @@
       "sparkline": "Mini chart closes",
       "marketIndices": "Market indices",
       "sectorMap": "Sector map",
+      "earnings": "Supplemental earnings (DART)",
       "url": "Endpoint URL (blank = built-in)",
       "method": "Request method",
       "body": "Extra POST JSON (optional)",

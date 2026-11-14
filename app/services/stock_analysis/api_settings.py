@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError,
 from services.db import SETTINGS_INDEX, get_es
 from services.stock_analysis.symbols import is_market_index, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol, symbol_market
 
-EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'quotes']
+EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'quotes', 'earnings']
 STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11|N225|TWII|HSI)|(?:ES|NQ|RTY|NIY)=F)$'
 TOKEN_PATTERN = re.compile(r'\{(symbols|symbol|market|language|period|interval)\}')
 
@@ -149,7 +149,22 @@ class SectorMapResponse(BaseModel):
     sectors: list[SectorResponse]
 
 
+class EarningsResponse(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    frequency: Literal['yearly', 'quarterly']
+    period: date
+    fiscalYear: int = Field(ge=1900, le=2200)
+    fiscalQuarter: int | None = Field(default=None, ge=1, le=4)
+    currency: Literal['KRW']
+    source: Literal['DART']
+    preliminary: bool
+    originLink: str | None = None
+    receiptDate: date | None = None
+    values: dict[Literal['revenue', 'operatingIncome', 'netIncome', 'netIncomeParent', 'costOfSales'], float | None]
+
+
 RESPONSE_ADAPTERS = {
+    'earnings': TypeAdapter(Annotated[list[EarningsResponse], Field(max_length=20)]),
     'quotes': TypeAdapter(list[StockQuoteResponse]),
     'symbols': TypeAdapter(list[StockSymbolResponse]),
     'prices': TypeAdapter(list[PriceResponse]),
@@ -223,6 +238,8 @@ def render_template(value, tokens: dict, *, url: bool = False):
 
 def build_api_request(endpoint: ApiEndpoint, kind: EndpointKind, tokens: dict[str, str]) -> tuple[str, dict]:
     keys = ('symbol', 'period', 'interval') if kind in ('prices', 'sparkline') else ('market', 'language')
+    if kind == 'earnings':
+        keys = ('symbol', 'market')
     if kind == 'quotes':
         keys = ('symbols', 'market')
     if kind == 'sparkline' and tokens.get('symbols'):

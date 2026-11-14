@@ -84,7 +84,7 @@ export default function StockApiSettings({market, onClose, onSaved}: {market: St
                         </details>
                     </section>
                     <div className="stock-api-endpoints">
-                        {STOCK_API_KINDS.map(kind => <StockApiEndpointSettings key={kind} market={activeMarket} kind={kind}
+                        {STOCK_API_KINDS.filter(kind => kind !== 'earnings' || activeMarket === 'KR').map(kind => <StockApiEndpointSettings key={kind} market={activeMarket} kind={kind}
                             settings={settings} endpoint={settings.endpoints[kind]} body={draft.bodies[kind] ?? '{}'} expanded={expandedEndpoints[activeMarket] === kind} disabled={saving}
                             onToggle={() => setExpandedEndpoints(previous => ({...previous, [activeMarket]: previous[activeMarket] === kind ? null : kind}))}
                             onChange={patch => updateSettings(previous => ({...previous, endpoints: {...previous.endpoints,

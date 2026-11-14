@@ -13,3 +13,26 @@
 공급자 접근은 전체 수집과 개별 조회가 공통 잠금을 사용하고, 재무정보 묶음 조회 사이에 2초 간격을 둔다. 요청 제한 발생 시 120초 대기를 적용한다. 한 번의 묶음 조회에는 여러 Yahoo 요청이 포함되므로 전체 수집에는 상당한 시간이 걸릴 수 있다.
 
 수집 스케줄러와 요청 공유는 데스크톱의 단일 백엔드 프로세스를 전제로 한다. 여러 백엔드를 같은 ES에 연결해 동시에 실행하려면 분산 작업 잠금이 추가로 필요하다. 주기 및 요청 제한 상수는 `financial_store.py`, 주간 실행 및 작업 처리는 `financial_collection.py`에서 관리한다.
+
+## Vyvow DART earnings supplement
+
+In **Market data API settings → Korea → Supplemental earnings (DART)**, configure
+`GET https://<vyvow-host>/api/vyact/stock-analysis/earnings?symbol={symbol}&market={market}`.
+Use the existing API key/header settings required by the Vyvow deployment. Leave the
+URL blank to disable supplementation. Enable financial context in stock AI chat to
+include these results. This endpoint reads existing StockFinancial records; it does
+not start DART crawling.
+
+The API returns up to 20 `isDartDerived=Y` records, with annual/quarterly period end,
+fiscal year/quarter, `KRW` currency, `DART` source, `preliminary`, `originLink`,
+`receiptDate`, and `values`. Values use original DART fields only, never `ext*`.
+Income metrics are `revenue`, `operatingIncome`, `netIncome`, `netIncomeParent`, and
+`costOfSales`, in base KRW. Missing values are omitted or null. Provisional income
+does not imply a complete balance sheet or cash-flow statement.
+
+Vyact preserves Yahoo statements and adds at most five missing income periods per
+frequency. Annual and quarterly periods remain separate. A Yahoo income period
+with any non-null metric counts as present, so DART does not fill individual missing
+metrics within that period. DART results are separate reference data in the LLM
+prompt; they are not written into the Yahoo financial store or its table. Errors
+are reported as unavailable supplemental data while retaining Yahoo context.

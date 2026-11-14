@@ -1,0 +1,26 @@
+.stock-external-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.stock-external-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 20px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.stock-external-link-naver { background: #03c75a; }
+.stock-external-link-toss { background: #3182f6; }
+.stock-external-link-dart { background: #233b8b; }
+.stock-external-link:hover { filter: brightness(1.15); }
+.stock-external-link:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }

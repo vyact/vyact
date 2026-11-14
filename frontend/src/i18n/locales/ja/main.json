@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "Naver証券を開く", "toss": "Toss証券を開く", "dart": "DART開示を開く"},
     "chartActions": {
       "comparisonMode": "比較表示",
       "price": "価格",
@@ -2137,6 +2138,7 @@
       "deleteKeyError": "APIキーを削除できませんでした。",
       "quotes": "銘柄株価・時価総額",
       "responseFields": {
+        "earnings": "Yahooにない期間のDART業績を補足します。金額はKRW、年次または単独四半期の損益。期末日、会計年度・四半期、受付日、出典URL、暫定区分を含めます。ext項目は除外。URLが空なら無効です。",
         "sharesOutstanding": "発行済株式数",
         "loanBalanceVolume": "貸株残高（株数）",
         "loanBalanceAmount": "貸株残高（金額）",
@@ -2236,6 +2238,7 @@
       "sparkline": "ミニチャート終値",
       "marketIndices": "市場指数",
       "sectorMap": "セクターマップ",
+      "earnings": "補足業績（DART）",
       "url": "API URL（空欄 = 既存ソース）",
       "method": "リクエスト方式",
       "body": "追加POST JSON（任意）",

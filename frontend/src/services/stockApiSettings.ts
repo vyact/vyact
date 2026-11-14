@@ -2,7 +2,7 @@ import {stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
 import {STOCK_MARKETS, type DailyPrice, type StockMarket} from './stockAnalysis';
 
-export const STOCK_API_KINDS = ['symbols', 'quotes', 'prices', 'sparkline', 'marketIndices', 'sectorMap'] as const;
+export const STOCK_API_KINDS = ['symbols', 'quotes', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'earnings'] as const;
 export type StockApiKind = typeof STOCK_API_KINDS[number];
 export type StockApiEndpoint = {url: string; method: 'GET' | 'POST'; body: Record<string, unknown>};
 export const STOCK_API_MARKETS = STOCK_MARKETS;
@@ -74,14 +74,18 @@ export function stockApiExamples(market: StockMarket, kind: StockApiKind, langua
     } satisfies DailyPrice;
     const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: {KR: 'Samsung Electronics', US: 'Apple', JP: 'Toyota Motor', TW: 'TSMC', HK: 'Tencent', CN: 'Kweichow Moutai'}[market], weight: 10, change: 1.2, price: 103};
     const responses = {
+        earnings: [{frequency: 'quarterly', period: '2026-09-30', fiscalYear: 2026, fiscalQuarter: 3,
+            currency: 'KRW', source: 'DART', preliminary: true, originLink: 'https://dart.fss.or.kr/',
+            receiptDate: '2026-10-29', values: {revenue: 19141500000000, operatingIncome: 944700000000,
+                netIncome: null, netIncomeParent: 241500000000}}],
         quotes: [{symbol, date: '2026-11-06', price: 103, change: 3, marketCap: 500000000000}],
         symbols: [{symbol, name: stock.name, preferred: false, ...(market === 'KR' ? {exchange: 'KOSPI'} : {})}],
         prices: [price], sparkline: {[symbol]: [100, 101, 99, 103], [secondSymbol]: [98, 100, 102, 104]},
         marketIndices: [{symbol: indexSymbol, price: 103, change: 3, changePercent: 3, date: '2026-11-06', closes: [100, 101, 103]}],
         sectorMap: {date: '2026-11-06', quoteDate: '2026-11-06', sectors: [{name: 'Technology', weight: 10, change: 1.2, stocks: [stock]}]},
     };
-    const query = kind === 'quotes' ? 'symbols={symbols}&market={market}' : kind === 'sparkline' ? 'symbols={symbols}&period={period}&interval={interval}' : kind === 'prices' ? 'symbol={symbol}&period={period}&interval={interval}' : 'market={market}&language={language}';
-    const body = kind === 'quotes' ? {symbols: '{symbols}', market: '{market}'} : kind === 'sparkline' ? {symbols: '{symbols}', period: '{period}', interval: '{interval}'} : kind === 'prices'
+    const query = kind === 'earnings' ? 'symbol={symbol}&market={market}' : kind === 'quotes' ? 'symbols={symbols}&market={market}' : kind === 'sparkline' ? 'symbols={symbols}&period={period}&interval={interval}' : kind === 'prices' ? 'symbol={symbol}&period={period}&interval={interval}' : 'market={market}&language={language}';
+    const body = kind === 'earnings' ? {symbol: '{symbol}', market: '{market}'} : kind === 'quotes' ? {symbols: '{symbols}', market: '{market}'} : kind === 'sparkline' ? {symbols: '{symbols}', period: '{period}', interval: '{interval}'} : kind === 'prices'
         ? {symbol: '{symbol}', period: '{period}', interval: '{interval}'} : {market: '{market}', language: '{language}'};
     const values: Record<string, string> = {symbol, symbols: `${symbol},${secondSymbol}`, market, language: kind === 'marketIndices' ? 'en' : language, period: kind === 'sparkline' ? '3mo' : '10y', interval: '1d'};
     const actualBody = Object.fromEntries(Object.entries(body).map(([key]) => [key, key === 'symbols' ? values[key].split(',') : values[key]]));

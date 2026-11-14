@@ -49,6 +49,13 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
                 <StockContextDateInput label={tr('endDate')} value={range.end} min={range.start} max={max} disabled={disabled}
                     onChange={end => {if (end && max && end >= range.start && end <= max) onRangeChange({...range, end});}}/>
             </div> : <input type="number" aria-label={tr('contextDays')} min={1} max={500} value={days} className="stock-context-period-count" disabled={disabled}
+                onKeyDown={event => {
+                    if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setOpen(false);
+                    }
+                }}
                 onChange={event => {const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= 500) onDaysChange(value);}}/>}
             {range && <div className="stock-context-period-summary-row">
                 {!!min && <small className="stock-context-period-summary" role="status">

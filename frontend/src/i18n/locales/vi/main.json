@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "Mở Naver Finance", "toss": "Mở Toss Securities", "dart": "Mở công bố DART"},
     "chartActions": {
       "comparisonMode": "Chế độ so sánh",
       "price": "Giá",
@@ -2137,6 +2138,7 @@
       "deleteKeyError": "Không thể xóa khóa API.",
       "quotes": "Giá và vốn hóa cổ phiếu",
       "responseFields": {
+        "earnings": "Bổ sung kỳ còn thiếu trên Yahoo từ DART. Đơn vị KRW; kết quả năm hoặc quý riêng lẻ. Gồm ngày kết thúc kỳ, năm/quý tài chính, ngày tiếp nhận, liên kết nguồn và trạng thái sơ bộ. Không dùng trường ext; URL trống để tắt.",
         "sharesOutstanding": "Cổ phiếu lưu hành",
         "loanBalanceVolume": "Dư nợ cho vay (cổ phiếu)",
         "loanBalanceAmount": "Dư nợ cho vay (giá trị)",
@@ -2236,6 +2238,7 @@
       "sparkline": "Giá đóng cửa biểu đồ nhỏ",
       "marketIndices": "Chỉ số thị trường",
       "sectorMap": "Bản đồ ngành",
+      "earnings": "Kết quả bổ sung (DART)",
       "url": "URL API (trống = nguồn mặc định)",
       "method": "Phương thức",
       "body": "JSON POST bổ sung (tùy chọn)",

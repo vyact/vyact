@@ -1,4 +1,5 @@
 import PinnedIndexBar from './PinnedIndexBar';
+import StockExternalLinks from './StockExternalLinks';
 import {withMarketIndices} from './stockDirectory';
 import useStockMarketShortcuts from './useStockMarketShortcuts';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
@@ -351,7 +352,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                     setPriceError(false);
                     setRefreshVersion(0);
                 }}><ArrowLeft size={16} aria-hidden="true"/></button>
-                    <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p></div>
+                    <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p>
+                    <StockExternalLinks market={market} symbol={active.symbol}/></div>
                 <div className="stock-analysis-header-actions">
                 <div className="stock-analysis-comparison-action" hidden={detailTab !== 'chart'} ref={setComparisonTarget}/>
                 {detailTab === 'chart' && <StockRefreshInterval seconds={chartRefreshSeconds} onChange={changeChartRefreshSeconds}/>}

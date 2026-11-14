@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "打开Naver证券", "toss": "打开Toss证券", "dart": "打开DART公告"},
     "chartActions": {
       "comparisonMode": "比较模式",
       "price": "价格",
@@ -2137,6 +2138,7 @@
       "deleteKeyError": "无法删除API密钥。",
       "quotes": "股票行情与市值",
       "responseFields": {
+        "earnings": "补充Yahoo缺少期间的DART业绩。金额为韩元，采用年度或单季度损益，包含期末日期、财年、季度、受理日期、来源链接及暂定标记。排除ext字段，URL留空则禁用。",
         "sharesOutstanding": "已发行股数",
         "loanBalanceVolume": "借券余额（股数）",
         "loanBalanceAmount": "借券余额（金额）",
@@ -2236,6 +2238,7 @@
       "sparkline": "迷你图收盘价",
       "marketIndices": "市场指数",
       "sectorMap": "行业图",
+      "earnings": "补充业绩（DART）",
       "url": "API URL（留空使用原有源）",
       "method": "请求方式",
       "body": "附加 POST JSON（可选）",

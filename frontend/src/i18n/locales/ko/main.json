@@ -1841,6 +1841,7 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "externalLinks": {"naver": "네이버 증권 열기", "toss": "토스증권 열기", "dart": "DART 공시 열기"},
     "chartActions": {
       "comparisonMode": "비교 표시",
       "price": "가격",
@@ -2147,6 +2148,7 @@
       "deleteKeyError": "API 키를 삭제하지 못했습니다.",
       "quotes": "종목 시세·시가총액",
       "responseFields": {
+        "earnings": "Yahoo에 없는 기간의 DART 실적을 보충합니다. 금액 단위는 원(KRW), 연간 또는 단일 분기 손익입니다. 기간 종료일, 회계연도·분기, 접수일, 공시 링크, 잠정 여부를 포함합니다. ext 필드는 제외하며 URL이 비어 있으면 보충하지 않습니다.",
         "sharesOutstanding": "상장 주식수",
         "loanBalanceVolume": "대차 잔고수량",
         "loanBalanceAmount": "대차 잔고금액",
@@ -2246,6 +2248,7 @@
       "sparkline": "미니 차트 종가",
       "marketIndices": "시장 지수",
       "sectorMap": "섹터맵",
+      "earnings": "실적 가져오기 (DART 보충)",
       "url": "API URL (빈 값 = 기존 소스)",
       "method": "요청 방식",
       "body": "추가 POST JSON (선택)",
