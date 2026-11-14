@@ -6,7 +6,7 @@ import IndicatorLegends from './IndicatorLegends';
 import {readIndicatorSettings, INDICATOR_SETTINGS_KEY} from './indicatorSettings';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject} from 'react';
 import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type MouseEventParams} from 'lightweight-charts';
-import {Eraser, ListX, Pencil, Ruler, Settings, Trash2} from 'lucide-react';
+import {Eraser, ListX, Pencil, Ruler, Settings, Trash2, Minus, TrendingUp} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft, type StockSymbol} from '../../services/stockAnalysis';
 import StockComparison from './StockComparison';
@@ -21,6 +21,8 @@ import ChartSettings from './ChartSettings';
 import ChartQuoteDetails, {type QuoteDisplayMode} from './ChartQuoteDetails';
 import {aggregatePrices, chartActivityField, DEFAULT_MOVING_AVERAGES, INTERVALS, MAX_MA_PERIOD, movingAverage, type ChartInterval, type MovingAverage} from './chartData';
 import {attachChartRuler, chartDay} from './chartRuler';
+import {attachChartDrawings, type DrawingMode} from './chartDrawings';
+import ChartPeriodShortcuts from './ChartPeriodShortcuts';
 
 interface Props {
     captureChart: RefObject<(() => ChartSnapshot) | null>;
@@ -61,6 +63,8 @@ function readMovingAverages(): MovingAverage[] {
 export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget, refreshSeconds, manualRefreshVersion, autoRefreshEnabled, captureChart}: Props) {
     const {t, i18n} = useTranslation('main');
     const container = useRef<HTMLDivElement>(null);
+    const drawings = useRef<ReturnType<typeof attachChartDrawings> | null>(null);
+    const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
     const ruler = useRef<ReturnType<typeof attachChartRuler> | null>(null);
     const chart = useRef<IChartApi | null>(null);
     const [comparisonQuoteTarget, setComparisonQuoteTarget] = useState<HTMLDivElement | null>(null);
@@ -294,12 +298,15 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             return text;
         }, {rise, fall});
         ruler.current = measurement;
+        const drawing = attachChartDrawings(instance, candles, bars);
+        drawings.current = drawing;
         updateChartData.current = rows => {
             const position = crosshairPosition.current;
             restoringCrosshair = true;
             try {
                 dataUpdates.forEach(update => update(rows));
                 measurement.setRows(rows);
+                drawing.setRows(rows);
             } finally {restoringCrosshair = false;}
             if (position) instance.setCrosshairPosition(position.price, position.day, candles);
         };
@@ -343,6 +350,8 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             node.removeEventListener('dblclick', resetPaneHeights, true);
             themeObserver.disconnect();
             measurement.dispose();
+            drawing.dispose();
+            drawings.current = null;
             savedRange.current = instance.timeScale().getVisibleLogicalRange();
             savedRangeInterval.current = interval;
             instance.remove();
@@ -353,7 +362,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             candleSeries.current = null;
             averages.current = [];
         };
-    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings, captureChart, activityField, hasActivity]);
+    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings, captureChart, activityField, hasActivity, symbol]);
 
     useEffect(() => {updateChartData.current?.(bars);}, [bars]);
 
@@ -372,8 +381,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     }, [bars, interval, market, locale, t, maEnabled, movingAverages, indicators, indicatorSettings]);
 
     useEffect(() => {
+        drawings.current?.setMode(!settingsOpen && !indicatorSettingsOpen && !memoDialog ? drawingMode : null);
         ruler.current?.setEnabled(measuring && !settingsOpen && !indicatorSettingsOpen && !memoDialog);
-    }, [bars, interval, market, locale, t, measuring, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
+    }, [bars, interval, market, locale, t, measuring, drawingMode, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -390,7 +400,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
 
     useEffect(() => {
         const instance = chart.current;
-        if (!instance || !memosReady || measuring || settingsOpen || indicatorSettingsOpen || memoDialog) return;
+        if (!instance || !memosReady || measuring || drawingMode || settingsOpen || indicatorSettingsOpen || memoDialog) return;
         const days = new Set(bars.map(bar => bar.day));
         const openMemo: Parameters<IChartApi['subscribeDblClick']>[0] = ({time, paneIndex}) => {
             const day = chartDay(time);
@@ -400,7 +410,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         return () => {
             if (chart.current === instance) instance.unsubscribeDblClick(openMemo);
         };
-    }, [bars, chartRevision, memosReady, measuring, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
+    }, [bars, chartRevision, memosReady, measuring, drawingMode, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
 
     const markers = useStockMemoMarkers(chart, candleSeries, bars, interval, memos, chartRevision);
     const selectedMemo = memos.find(memo => memo.day === memoDialog?.day);
@@ -445,12 +455,18 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 </div>
             }>
                 <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-ruler" aria-pressed={measuring}
-                        aria-label={t('stockAnalysis.ruler')} onClick={() => setMeasuring(value => !value)}><Ruler size={17}/></button>
+                        aria-label={t('stockAnalysis.ruler')} onClick={() => {setDrawingMode(null); setMeasuring(value => !value);}}><Ruler size={17}/></button>
             </Tooltip>
-            <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-undo" aria-label={t('stockAnalysis.undoMeasure')}
-                    title={t('stockAnalysis.undoMeasure')} onClick={() => {ruler.current?.undo();}}><Eraser size={17}/></button>
-            <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-clear" aria-label={t('stockAnalysis.clearMeasures')}
-                    title={t('stockAnalysis.clearMeasures')} onClick={() => {ruler.current?.clear();}}><Trash2 size={17}/></button>
+                {(['horizontal', 'trend'] as const).map(mode => <Tooltip key={mode} content={t(`stockAnalysis.chartTools.${mode}`)}>
+                    <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-drawing" aria-pressed={drawingMode === mode}
+                        aria-label={t(`stockAnalysis.chartTools.${mode}`)} onClick={() => {setMeasuring(false); setDrawingMode(current => current === mode ? null : mode);}}>
+                        {mode === 'horizontal' ? <Minus size={17} aria-hidden="true"/> : <TrendingUp size={17} aria-hidden="true"/>}
+                    </button>
+                </Tooltip>)}
+            <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-undo" aria-label={t('stockAnalysis.chartTools.undo')}
+                    title={t('stockAnalysis.chartTools.undo')} onClick={() => {if (measuring) ruler.current?.undo(); else drawings.current?.undo();}}><Eraser size={17}/></button>
+            <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-clear" aria-label={t('stockAnalysis.chartTools.clear')}
+                    title={t('stockAnalysis.chartTools.clear')} onClick={() => {ruler.current?.clear(); drawings.current?.clear();}}><Trash2 size={17}/></button>
             <CustomSelect showGroupLabels dropdownClassName="stock-indicator-dropdown" className="stock-indicator-select" value="" selectedValues={indicators}
                 placeholder={t('stockAnalysis.indicatorSelect', {count: indicators.length})}
                 ariaLabel={t('stockAnalysis.indicatorSelect', {count: indicators.length})}
@@ -474,6 +490,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             <button type="button" className="modal-action-cancel stock-chart-settings-button"
                     onClick={() => setSettingsOpen(true)}><Settings size={16}/>{t('stockAnalysis.chartSettings')}</button>
         </StockComparison>
+        <ChartPeriodShortcuts chart={chartInstance} bars={bars}/>
         {quoteMode === 'header' && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market}/>}
         {memoLoadFailed && <div className="stock-memo-error" role="alert">
             {t('stockAnalysis.memoLoadError')}
@@ -484,7 +501,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         </div>}
         <div className="stock-chart-plot">
             <div ref={container} className="stock-price-chart-canvas"/>
-            {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && !settingsOpen && !memoDialog && <div
+            {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && !drawingMode && !measuring && !settingsOpen && !memoDialog && <div
                 className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: Math.max(8,
                     hoverPoint.x + 40 + quoteTooltipWidth <= hoverPoint.chartWidth - 8
                         ? hoverPoint.x + 40 : hoverPoint.x - quoteTooltipWidth - 40,

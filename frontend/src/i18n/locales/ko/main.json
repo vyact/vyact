@@ -1841,6 +1841,19 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "조회 기간",
+      "months": "{{count}}개월",
+      "year": "1년",
+      "all": "전체",
+      "draw": "그리기 도구",
+      "horizontal": "수평선",
+      "trend": "추세선",
+      "undo": "현재 도구의 마지막 그리기 취소",
+      "clear": "측정 및 그리기 전체 삭제",
+      "months_one": "{{count}}개월",
+      "months_other": "{{count}}개월"
+    },
     "news": {
       "tab": "뉴스",
       "empty": "이 종목의 뉴스가 없습니다.",

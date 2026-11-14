@@ -1832,6 +1832,19 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "Range",
+      "months": "{{count}}M",
+      "year": "1Y",
+      "all": "All",
+      "draw": "Drawing tools",
+      "horizontal": "Horizontal line",
+      "trend": "Trend line",
+      "undo": "Undo drawing in the active tool",
+      "clear": "Clear all measurements and drawings",
+      "months_one": "{{count}}M",
+      "months_other": "{{count}}M"
+    },
     "news": {
       "tab": "News",
       "empty": "No news is available for this symbol.",

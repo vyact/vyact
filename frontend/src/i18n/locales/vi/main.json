@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "Khoảng thời gian",
+      "months": "{{count}} tháng",
+      "year": "1 năm",
+      "all": "Tất cả",
+      "draw": "Công cụ vẽ",
+      "horizontal": "Đường ngang",
+      "trend": "Đường xu hướng",
+      "undo": "Hoàn tác nét vẽ của công cụ đang dùng",
+      "clear": "Xóa tất cả phép đo và nét vẽ",
+      "months_one": "{{count}} tháng",
+      "months_other": "{{count}} tháng"
+    },
     "news": {
       "tab": "Tin tức",
       "empty": "Không có tin tức cho mã này.",

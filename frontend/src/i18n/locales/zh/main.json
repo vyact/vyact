@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "显示范围",
+      "months": "{{count}}个月",
+      "year": "1年",
+      "all": "全部",
+      "draw": "绘图工具",
+      "horizontal": "水平线",
+      "trend": "趋势线",
+      "undo": "撤销当前工具的上一次绘图",
+      "clear": "清除全部测量和绘图",
+      "months_one": "{{count}}个月",
+      "months_other": "{{count}}个月"
+    },
     "news": {
       "tab": "新闻",
       "empty": "暂无该证券的新闻。",

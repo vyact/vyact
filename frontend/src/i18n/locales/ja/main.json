@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "表示期間",
+      "months": "{{count}}か月",
+      "year": "1年",
+      "all": "全期間",
+      "draw": "描画ツール",
+      "horizontal": "水平線",
+      "trend": "トレンドライン",
+      "undo": "選択中のツールの描画を元に戻す",
+      "clear": "測定と描画をすべて削除",
+      "months_one": "{{count}}か月",
+      "months_other": "{{count}}か月"
+    },
     "news": {
       "tab": "ニュース",
       "empty": "この銘柄のニュースはありません。",

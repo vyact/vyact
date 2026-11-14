@@ -1832,6 +1832,19 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "chartTools": {
+      "period": "Periodo",
+      "months": "{{count}} meses",
+      "year": "1 año",
+      "all": "Todo",
+      "draw": "Herramientas de dibujo",
+      "horizontal": "Línea horizontal",
+      "trend": "Línea de tendencia",
+      "undo": "Deshacer el dibujo de la herramienta activa",
+      "clear": "Borrar todas las mediciones y dibujos",
+      "months_one": "{{count}} meses",
+      "months_other": "{{count}} meses"
+    },
     "news": {
       "tab": "Noticias",
       "empty": "No hay noticias para este símbolo.",
