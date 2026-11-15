@@ -1833,6 +1833,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "community": {"chat": "Chat", "unavailable": "La conexión con la comunidad aún no está configurada."},
     "globalIndicators": {
       "treasury": "Rendimiento EE. UU. 10 años",
       "title": "Mercados globales",

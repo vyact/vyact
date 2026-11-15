@@ -4,6 +4,9 @@ import {useTranslation} from 'react-i18next';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
 import useStockAnalysisShortcut from './useStockAnalysisShortcut';
 import StockDiscussionSidebar from './StockDiscussionSidebar';
+import ModalTabs from '../common/ModalTabs/ModalTabs';
+import StockCommunityChat from './StockCommunityChat';
+import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
 const DEFAULT_WIDTH = 340;
@@ -21,6 +24,8 @@ function readLayout(): {width: number; collapsed: boolean} {
 export default function StockDiscussionPanel(props: ComponentProps<typeof StockDiscussionSidebar>) {
     const {t} = useTranslation('main');
     const [layout, setLayout] = useState(readLayout);
+    const [activeTab, setActiveTab] = useState<'ai' | 'chat'>('ai');
+    const [chatLoaded, setChatLoaded] = useState(false);
     const panel = useRef<HTMLDivElement>(null);
     const previewWidth = useCallback((width: number) => {
         panel.current?.style.setProperty('--stock-discussion-width', `${width}px`);
@@ -56,7 +61,12 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
             {layout.collapsed ? <ChevronLeft size={17} aria-hidden="true"/> : <ChevronRight size={17} aria-hidden="true"/>}
         </button>
         <div className="stock-discussion-body" inert={layout.collapsed} aria-hidden={layout.collapsed}>
-            <StockDiscussionSidebar {...props} isVisible={!layout.collapsed} onReveal={() => {if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
+            <div className="stock-community-tabs"><ModalTabs activeKey={activeTab} onChange={tab => {setActiveTab(tab); if (tab === 'chat') setChatLoaded(true);}}
+                tabs={[{key: 'ai', label: t('stockAnalysis.discussion.ai')}, {key: 'chat', label: t('stockAnalysis.community.chat')}]}/></div>
+            <div className="stock-community-tab-content" hidden={activeTab !== 'ai'}>
+            <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {setActiveTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
+            </div>
+            {chatLoaded && <div className="stock-community-tab-content" hidden={activeTab !== 'chat'}><StockCommunityChat/></div>}
         </div>
     </div>;
 }

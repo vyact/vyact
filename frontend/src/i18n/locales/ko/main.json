@@ -1842,6 +1842,7 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "community": {"chat": "채팅", "unavailable": "커뮤니티 연결이 아직 설정되지 않았습니다."},
     "globalIndicators": {
       "treasury": "미국채 10년 금리",
       "title": "글로벌 시장 지표",

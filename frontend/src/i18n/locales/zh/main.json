@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "community": {"chat": "聊天", "unavailable": "社区连接尚未配置。"},
     "globalIndicators": {
       "treasury": "美国10年期国债收益率",
       "title": "全球市场指标",

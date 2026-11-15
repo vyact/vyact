@@ -1833,6 +1833,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "community": {"chat": "Chat", "unavailable": "The community connection is not configured yet."},
     "globalIndicators": {
       "treasury": "US 10Y yield",
       "title": "Global markets",

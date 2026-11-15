@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "community": {"chat": "แชท", "unavailable": "ยังไม่ได้ตั้งค่าการเชื่อมต่อชุมชน"},
     "globalIndicators": {
       "treasury": "ผลตอบแทนพันธบัตรสหรัฐ 10 ปี",
       "title": "ตลาดโลก",
