@@ -15,6 +15,7 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
     const {t} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [open, setOpen] = useState(false);
+    const [daysDraft, setDaysDraft] = useState<string | null>(null);
     const [loaded, setLoaded] = useState<{market: StockMarket; dates: string[]} | null>(null);
     const rangeSelected = range !== null;
     useEffect(() => {
@@ -35,7 +36,7 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
         const clamped = clampContextRange(range, min, max);
         if (clamped && range && (clamped.start !== range.start || clamped.end !== range.end)) onRangeChange(clamped);
     }, [range, min, max, disabled, onRangeChange]);
-    return <ActionMenu isOpen={open} onOpenChange={setOpen} preferredSide="top" align="start" disabled={disabled}
+    return <ActionMenu isOpen={open} onOpenChange={nextOpen => {setDaysDraft(null); setOpen(nextOpen);}} preferredSide="top" align="start" disabled={disabled}
         className="stock-context-period" triggerClassName="stock-context-period-trigger"
         menuClassName="stock-context-period-popup" ariaLabel={tr('periodSettings')}
         trigger={<span>{range ? `${range.start} – ${range.end} · ${selectedCountLabel}` : `${tr('contextDays')} ${days}`}</span>}>
@@ -48,15 +49,21 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
                 <span>–</span>
                 <StockContextDateInput label={tr('endDate')} value={range.end} min={range.start} max={max} disabled={disabled}
                     onChange={end => {if (end && max && end >= range.start && end <= max) onRangeChange({...range, end});}}/>
-            </div> : <input type="number" aria-label={tr('contextDays')} min={1} max={500} value={days} className="stock-context-period-count" disabled={disabled}
+            </div> : <input type="number" aria-label={tr('contextDays')} min={1} max={500} value={daysDraft ?? String(days)} className="stock-context-period-count" disabled={disabled}
+                onBlur={() => setDaysDraft(null)}
                 onKeyDown={event => {
                     if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                         event.preventDefault();
                         event.stopPropagation();
+                        setDaysDraft(null);
                         setOpen(false);
                     }
                 }}
-                onChange={event => {const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= 500) onDaysChange(value);}}/>}
+                onChange={event => {
+                    setDaysDraft(event.target.value);
+                    const value = Number(event.target.value);
+                    if (Number.isInteger(value) && value >= 1 && value <= 500) onDaysChange(value);
+                }}/>}
             {range && <div className="stock-context-period-summary-row">
                 {!!min && <small className="stock-context-period-summary" role="status">
                     {selectedCountLabel}
