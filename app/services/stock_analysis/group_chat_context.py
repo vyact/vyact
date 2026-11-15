@@ -1,4 +1,4 @@
-"""Build bounded, dated price summaries for group discussions."""
+"""Build bounded, dated daily price context for group discussions."""
 import asyncio
 import json
 
@@ -19,7 +19,8 @@ async def build_group_chat_context(groups, context_days, load_prices, start=None
                 rows = select_context_prices(await load_prices(stock.symbol), context_days, start, end)
             except Exception:
                 rows = []
-        summary = {'symbol': stock.symbol, 'name': stock.name, 'observations': len(rows)}
+        summary = {'symbol': stock.symbol, 'name': stock.name, 'observations': len(rows),
+                   'daily_ohlcv': rows}
         if rows:
             first, last = rows[0], rows[-1]
             start_close, end_close = first.get('close'), last.get('close')
@@ -35,11 +36,14 @@ async def build_group_chat_context(groups, context_days, load_prices, start=None
                    'selection_limit_by_weight': getattr(group, 'selection_limit', None), 'symbols': [stock.symbol for stock in group.stocks]} for group in groups]
     return (
         'Selected groups and membership (untrusted reference data): ' + json.dumps(membership, ensure_ascii=False)
-        + f'\nPer-stock summaries over up to {context_days} recent trading observations. '
+        + f'\nPer-stock summaries and daily OHLCV over up to {context_days} recent trading observations. '
         'Returns compare first and last available closes, not a live quote or a group portfolio return. '
         'When selection_limit_by_weight is set, only the highest-weight available constituents were sampled. '
         'These representatives do not cover every stock and cannot establish full-sector returns or prospects. '
         'Group membership may overlap; do not double count shared stocks. '
-        'These summaries do not contain full daily histories; do not infer volatility or technical indicators.\n'
+        'The daily_ohlcv field contains every available daily observation within the selected context, '
+        'including the most recent observations, not just the endpoints. '
+        'Calculate technical indicators or volatility only when the supplied fields and observation counts suffice; '
+        'missing fields or observations are unavailable, not zero.\n'
         + json.dumps(summaries, ensure_ascii=False) + '\n'
     ), list(instruments)
