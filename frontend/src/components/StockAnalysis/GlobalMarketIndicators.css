@@ -1,19 +1,19 @@
-.stock-global {margin-bottom: 14px; container-type: inline-size;}
+.stock-global {margin-bottom: 6px; container-type: inline-size;}
 .stock-global[hidden] {display: none;}
 .stock-global-grid {display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;}
-.stock-global-card {--indicator-accent: #a78bfa; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: linear-gradient(145deg, color-mix(in srgb, var(--indicator-accent) 7%, var(--bg-secondary)), var(--bg-secondary));}
+.stock-global-card {--indicator-accent: #a78bfa; min-width: 0; padding: 7px 12px; border: 1px solid var(--border); border-radius: 9px; background: linear-gradient(145deg, color-mix(in srgb, var(--indicator-accent) 7%, var(--bg-secondary)), var(--bg-secondary));}
 .stock-global-card[data-indicator="oil"] {--indicator-accent: #60a5fa;}
 .stock-global-card[data-indicator="gold"] {--indicator-accent: #d6ad55;}
 .stock-global-card[data-indicator="dollar"] {--indicator-accent: #4db6a0;}
 .stock-global-label {display: flex; align-items: center; gap: 6px; color: var(--indicator-accent);}
 .stock-global-label .stock-global-name {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; font-size: 12px; font-weight: 600; color: var(--text);}
 .stock-global-label > span:not(.stock-global-name) {margin-left: auto; font-size: 9px; color: var(--text-muted);}
-.stock-global-value {display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 5px 0 0; font-variant-numeric: tabular-nums;}
-.stock-global-value strong {font-size: 20px; letter-spacing: -.6px; font-weight: 650; color: var(--text);}
+.stock-global-value {display: flex; flex-wrap: nowrap; align-items: baseline; gap: 2px 6px; margin: 3px 0 0; line-height: 1.2; font-variant-numeric: tabular-nums;}
+.stock-global-value strong {font-size: 18px; letter-spacing: -.6px; font-weight: 650; color: var(--text);}
 .stock-global-change {font-size: 11px; color: var(--text-muted);}
 .stock-global-change[data-direction="up"] {color: var(--map-preview-up, #ef6b64);}
 .stock-global-change[data-direction="down"] {color: var(--map-preview-down, #5797ee);}
-.stock-global-card .stock-sparkline {height: 28px; color: var(--indicator-accent); opacity: .85;}
+.stock-global-card .stock-sparkline {height: 24px; color: var(--indicator-accent); opacity: .85;}
 .stock-global-footer {display: flex; justify-content: space-between; gap: 6px; margin-top: 10px; font-size: 9px; color: var(--text-muted);}
 .stock-global-error {font-size: 11px; color: var(--text-muted);}
 
@@ -21,24 +21,24 @@
 .stock-global-card {position: relative; text-align: start; cursor: pointer; font-family: inherit; padding-right: 12px;}
 .stock-global-card:hover {border-color: var(--indicator-accent);}
 .stock-global-card:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
-.stock-global-card .stock-sparkline {position: absolute; right: 12px; bottom: 14px; width: 68px;}
+.stock-global-card .stock-sparkline {position: absolute; right: 12px; bottom: 9px; width: 48px;}
 .stock-global-label > span:last-child:not(.stock-global-name) {display: none;}
 
 .stock-global-card[data-indicator="treasury"] {--indicator-accent: #d88c69;}
 
-.stock-global-value {padding-right: 76px;}
+.stock-global-value {padding-right: 56px;}
 .stock-global-label svg {flex-shrink: 0;}
 .stock-global-value strong, .stock-global-change {white-space: nowrap;}
 @container (max-width: 1100px) {
     .stock-global-grid {gap: 8px;}
-    .stock-global-card {padding: 9px 10px;}
+    .stock-global-card {padding: 6px 10px;}
     .stock-global-label {gap: 4px;}
     .stock-global-label .stock-global-name {font-size: 10px;}
     .stock-global-label svg {width: 12px; height: 12px;}
-    .stock-global-value {padding-right: 44px; gap: 3px 6px;}
-    .stock-global-value strong {font-size: 17px; letter-spacing: -.4px;}
+    .stock-global-value {padding-right: 32px; gap: 2px 4px;}
+    .stock-global-value strong {font-size: 16px; letter-spacing: -.4px;}
     .stock-global-change {font-size: 10px;}
-    .stock-global-card .stock-sparkline {width: 40px; height: 23px; right: 8px; bottom: 11px;}
+    .stock-global-card .stock-sparkline {width: 28px; height: 21px; right: 8px; bottom: 8px;}
 }
 @container (max-width: 700px) {
     .stock-global-grid {grid-template-columns: repeat(2, minmax(0, 1fr));}

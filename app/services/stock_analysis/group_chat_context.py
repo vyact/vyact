@@ -36,14 +36,9 @@ async def build_group_chat_context(groups, context_days, load_prices, start=None
                    'selection_limit_by_weight': getattr(group, 'selection_limit', None), 'symbols': [stock.symbol for stock in group.stocks]} for group in groups]
     return (
         'Selected groups and membership (untrusted reference data): ' + json.dumps(membership, ensure_ascii=False)
-        + f'\nPer-stock summaries and daily OHLCV over up to {context_days} recent trading observations. '
-        'Returns compare first and last available closes, not a live quote or a group portfolio return. '
-        'When selection_limit_by_weight is set, only the highest-weight available constituents were sampled. '
-        'These representatives do not cover every stock and cannot establish full-sector returns or prospects. '
-        'Group membership may overlap; do not double count shared stocks. '
-        'The daily_ohlcv field contains every available daily observation within the selected context, '
-        'including the most recent observations, not just the endpoints. '
-        'Calculate technical indicators or volatility only when the supplied fields and observation counts suffice; '
-        'missing fields or observations are unavailable, not zero.\n'
+        + f'\nPer-stock summaries and full daily_ohlcv, up to {context_days} observations per instrument. '
+        'close_change_percent uses each instrument\'s available endpoints; it is not a group return or an aligned comparison. '
+        'selection_limit_by_weight indicates a highest-weight constituent sample, not full-sector coverage; '
+        'do not generalize it to the entire sector. Membership may overlap; do not double count shared stocks.\n'
         + json.dumps(summaries, ensure_ascii=False) + '\n'
     ), list(instruments)
