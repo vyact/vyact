@@ -21,3 +21,17 @@ describe('chart price freshness', () => {
         },
     );
 });
+
+
+describe('global indicator prices', () => {
+    it.each(['^VIX', 'CL=F', 'GC=F', 'DX-Y.NYB', '^TNX'])('uses the Yahoo-only route for %s', async symbol => {
+        const fetch = vi.fn(async () => new Response('[]', {status: 200}));
+        vi.stubGlobal('fetch', fetch);
+        const signal = new AbortController().signal;
+        await stockAnalysis.prices(symbol, signal);
+        expect(fetch).toHaveBeenCalledWith(
+            `/api/stock-analysis/global-indicators/prices/${encodeURIComponent(symbol)}`,
+            {signal, cache: 'no-store'},
+        );
+    });
+});

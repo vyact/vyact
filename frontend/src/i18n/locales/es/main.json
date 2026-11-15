@@ -1833,6 +1833,20 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "Rendimiento EE. UU. 10 años",
+      "title": "Mercados globales",
+      "period": "20 sesiones · Diario",
+      "oil": "Futuros WTI",
+      "gold": "Futuros de oro",
+      "dollar": "Índice del dólar",
+      "points": "Índice",
+      "unavailable": "Sin datos",
+      "error": "No se pudo actualizar. Las cotizaciones pueden estar desactualizadas.",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "Abrir Naver Finance", "toss": "Abrir Toss Securities", "dart": "Abrir divulgaciones DART"},
     "chartActions": {
       "comparisonMode": "Modo de comparación",

@@ -1,3 +1,5 @@
+import {isGlobalIndicator} from '../../utils/stockSymbols';
+import GlobalMarketIndicators from './GlobalMarketIndicators';
 import PinnedIndexBar from './PinnedIndexBar';
 import StockExternalLinks from './StockExternalLinks';
 import {withMarketIndices} from './stockDirectory';
@@ -136,6 +138,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     };
     const chartVisible = detailTab === 'chart';
     const activeSymbol = active?.symbol;
+    const globalIndicator = !!activeSymbol && isGlobalIndicator(activeSymbol);
+    const instrumentMarket = globalIndicator ? 'US' : market;
     const directory = withMarketIndices(market, symbols, tr);
     const watchlistCount = directory.filter(item => watchlist.contains(market, item.symbol)).length;
     const filtered = directory.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
@@ -342,7 +346,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
     <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} sidebarOverlay={sidebarHover} onSidebarMouseEnter={onSidebarHoverEnter} onSidebarMouseLeave={onSidebarHoverLeave} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
-        <div className={`stock-analysis-inner${active || listView === 'groups' ? " has-discussion" : ""}`}><main className="stock-analysis-content">
+        <div className={`stock-analysis-inner${active || listView === 'groups' ? " has-discussion" : ""}`}><main className={`stock-analysis-content${active && detailTab === 'news' ? ' stock-analysis-content-news' : ''}`}>
+            <GlobalMarketIndicators hidden={!!active} onOpen={openSymbol}/>
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
@@ -368,26 +373,26 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 </div>
             </div>}
             {active && <div className="stock-analysis-detail-tabs"><ModalTabs
-                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, {key: 'financials', label: tr('financials.tab')}, {key: 'news', label: tr('news.tab')}]}
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, ...(!globalIndicator ? [{key: 'financials' as const, label: tr('financials.tab')}] : []), {key: 'news', label: tr('news.tab')}]}
                 activeKey={detailTab} onChange={setDetailTab}/></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
             <div className="stock-analysis-chart-stage" aria-busy={loading}>
             {loading && <StockLoadingIndicator title={active.name} overlay={!!rows?.length} iconOnly/>}
             {priceError && <p role="alert">{tr('historyError')}</p>}
             {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
-            {active && !!rows?.length && <StockPriceChart captureChart={captureChart} key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} autoRefreshEnabled={chartVisible && !loading} refreshSeconds={chartRefreshSeconds} manualRefreshVersion={refreshVersion} label={tr('dailyPrices')}/>}
+            {active && !!rows?.length && <StockPriceChart captureChart={captureChart} key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={instrumentMarket} directory={symbols} comparisonTarget={comparisonTarget} autoRefreshEnabled={chartVisible && !loading} refreshSeconds={chartRefreshSeconds} manualRefreshVersion={refreshVersion} label={tr('dailyPrices')}/>}
             </div>
             <footer className="stock-chart-attribution stock-analysis-caption">
-                <span>{tr('source')}</span>
+                <span>{globalIndicator ? t('stockAnalysis.globalIndicators.source') : tr('source')}</span>
                 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™ · © 2025 TradingView, Inc.</a>
             </footer></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'history'} aria-busy={loading}>
                 {loading && <StockLoadingIndicator title={active.name} iconOnly/>}
                 {priceError && <p role="alert">{tr('historyError')}</p>}
                 {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
-                {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={market}/>}
+                {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={instrumentMarket}/>}
             </div>}
-            {active && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
+            {active && !globalIndicator && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
             {active && detailTab === 'news' && <div className="stock-analysis-detail-panel">
@@ -401,7 +406,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 symbols: sector.stocks.map(stock => stock.symbol)}))}/>}
         {!active && listView === 'groups' && <StockGroupDiscussionPanel key={`groups:${market}`} groups={marketGroups} market={market} directory={symbols}
             weights={Object.fromEntries(groupSectors.flatMap(sector => sector.stocks.map(stock => [stock.symbol, stock.weight])))}/>}
-        {active && <StockDiscussionPanel priceRows={rows ?? []} captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
+        {active && <StockDiscussionPanel priceRows={rows ?? []} captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={instrumentMarket} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;
 }

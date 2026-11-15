@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "ผลตอบแทนพันธบัตรสหรัฐ 10 ปี",
+      "title": "ตลาดโลก",
+      "period": "20 วันซื้อขาย · รายวัน",
+      "oil": "สัญญาน้ำมัน WTI",
+      "gold": "สัญญาทองคำ",
+      "dollar": "ดัชนีดอลลาร์",
+      "points": "ดัชนี",
+      "unavailable": "ไม่มีข้อมูล",
+      "error": "อัปเดตไม่สำเร็จ ราคาเดิมอาจล้าสมัย",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "เปิด Naver Finance", "toss": "เปิด Toss Securities", "dart": "เปิดประกาศ DART"},
     "chartActions": {
       "comparisonMode": "โหมดเปรียบเทียบ",

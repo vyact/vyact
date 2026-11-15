@@ -8,8 +8,8 @@ export function quoteChange(value: number | null, previous: number | null | unde
     return value == null || previous == null || previous <= 0 ? null : (value / previous - 1) * 100;
 }
 
-export default function ChartQuoteDetails({quote, previous, market, detailed = false}: {
-    quote: DailyPrice; previous?: DailyPrice; market: StockMarket; detailed?: boolean;
+export default function ChartQuoteDetails({quote, previous, market, detailed = false, showActivity = true}: {
+    quote: DailyPrice; previous?: DailyPrice; market: StockMarket; detailed?: boolean; showActivity?: boolean;
 }) {
     const {t, i18n} = useTranslation('main');
     const weekday = new Intl.DateTimeFormat(i18n.resolvedLanguage, {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${quote.day}T00:00:00Z`));
@@ -27,11 +27,11 @@ export default function ChartQuoteDetails({quote, previous, market, detailed = f
                 {(detailed || key === 'close') && change(quote[key], previous?.close)}
             </dd>
         </div>)}
-        {quote.volume != null && quote.tradingValue == null && <div><dt>{t('stockAnalysis.volume')}</dt><dd>
+        {showActivity && quote.volume != null && quote.tradingValue == null && <div><dt>{t('stockAnalysis.volume')}</dt><dd>
             {activityNumber.format(quote.volume)}
             {detailed && change(quote.volume, previous?.volume)}
         </dd></div>}
-        {quote.tradingValue != null && <div><dt>{t('stockAnalysis.history.tradingValue')}</dt><dd>
+        {showActivity && quote.tradingValue != null && <div><dt>{t('stockAnalysis.history.tradingValue')}</dt><dd>
             {activityNumber.format(quote.tradingValue)}
             {detailed && change(quote.tradingValue, previous?.tradingValue)}
         </dd></div>}

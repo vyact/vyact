@@ -1,4 +1,4 @@
-import {normalizeStockSectorMap, normalizeStockSymbol, stockSymbolCode} from '../utils/stockSymbols';
+import {isGlobalIndicator, normalizeStockSectorMap, normalizeStockSymbol, stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
 import {localizeStockName} from '../utils/stockDisplayName';
 import {stockSnapshotCache} from './stockSnapshotCache';
@@ -15,7 +15,7 @@ export interface StockSymbol {symbol: string; name: string; preferred?: boolean;
 export interface SectorStock extends StockSymbol {industry?: string | null; weight: number; change: number | null; price: number | null; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}
 export interface MarketSector {stockCount?: number | null; name: string; weight: number; change: number | null; stocks: SectorStock[]}
 export interface StockQuote {symbol: string; date: string; price: number | null; change: number | null; marketCap: number; session?: 'regular' | 'premarket'; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}
-export interface MarketIndex {symbol: string; indexSymbol?: string; quoteTime?: number; nextRegularOpen?: number; price: number | null; change: number | null; changePercent: number | null; date: string | null; closes: number[]}
+export interface MarketIndex {nextRefreshAt?: number; stale?: boolean;symbol: string; indexSymbol?: string; quoteTime?: number; nextRegularOpen?: number; price: number | null; change: number | null; changePercent: number | null; date: string | null; closes: number[]}
 export interface MarketSectorMap {date: string; quoteDate: string; sectors: MarketSector[]; session?: 'regular' | 'premarket' | null; quoteTime?: string | null}
 
 export type StockInvestorGroup = 'ind' | 'for' | 'ins' | 'pen' | 'itc' | 'pef' | 'fin' | 'sur' | 'bng' | 'etc' | 'cor' | 'eor';
@@ -55,6 +55,7 @@ async function request<T>(path: string, signal?: AbortSignal, options?: RequestI
 }
 
 export const stockAnalysis = {
+    globalIndicators: (signal: AbortSignal) => request<MarketIndex[]>('global-indicators', signal),
     pinnedIndices: (signal: AbortSignal) => request<{items: PinnedMarketIndex[] | null}>('pinned-indices', signal, {cache: 'no-store'}),
     savePinnedIndices: (items: PinnedMarketIndex[]) => request<{ok: boolean}>('pinned-indices', undefined, {
         method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({items}),
@@ -85,6 +86,6 @@ export const stockAnalysis = {
         return rows;
     },
     prices: (symbol: string, signal: AbortSignal) => request<DailyPrice[]>(
-        `prices/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},
+        `${isGlobalIndicator(symbol) ? 'global-indicators/prices' : 'prices'}/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},
     ),
 };

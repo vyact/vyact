@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "米国10年債利回り",
+      "title": "グローバル市場指標",
+      "period": "20取引日 · 日次",
+      "oil": "WTI原油先物",
+      "gold": "金先物",
+      "dollar": "ドル指数",
+      "points": "指数",
+      "unavailable": "データなし",
+      "error": "更新できませんでした。以前の価格が表示される場合があります。",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "Naver証券を開く", "toss": "Toss証券を開く", "dart": "DART開示を開く"},
     "chartActions": {
       "comparisonMode": "比較表示",

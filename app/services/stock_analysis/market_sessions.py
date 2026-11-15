@@ -1,5 +1,5 @@
 """Exchange session windows, including holidays, breaks and daylight saving time."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as clock_time
 from functools import lru_cache
 import warnings
 
@@ -14,6 +14,15 @@ MARKET_CASH_CALENDARS = {"US": CASH_CALENDAR, "KR": "XKRX", "JP": JAPAN_CASH_CAL
 
 @lru_cache(maxsize=8)
 def _calendar(calendar_name: str):
+    if calendar_name == 'VIX':
+        # VIX spot dissemination, not VIX futures. Times are America/Chicago.
+        # https://www.cboe.com/tradable_products/vix/faqs
+        calendar = market_calendars.get_calendar('CBOE_Index_Options')
+        calendar.change_time('market_open', clock_time(2, 15))
+        calendar.change_time('market_close', clock_time(15, 16))
+        calendar.add_time('break_start', clock_time(8, 25))
+        calendar.add_time('break_end', clock_time(8, 30))
+        return calendar
     if calendar_name == "XKRX":
         # Construction warns before we can remove the obsolete break times.
         # Suppress only this known warning, only while building this calendar.

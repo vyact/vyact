@@ -1842,6 +1842,20 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "미국채 10년 금리",
+      "title": "글로벌 시장 지표",
+      "period": "20거래일 · 일별",
+      "oil": "WTI 원유 선물",
+      "gold": "금 선물",
+      "dollar": "달러 인덱스",
+      "points": "지수",
+      "unavailable": "데이터 없음",
+      "error": "갱신하지 못했습니다. 이전 시세가 표시될 수 있습니다.",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "네이버 증권 열기", "toss": "토스증권 열기", "dart": "DART 공시 열기"},
     "chartActions": {
       "comparisonMode": "비교 표시",

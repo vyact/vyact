@@ -27,9 +27,11 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
     const hasInvestors = groups.length > 0;
     const hasMarketCap = sorted.some(row => isFiniteValue(row.marketCap));
     const hasLoanBalance = sorted.some(row => isFiniteValue(row.loanBalanceVolume) || isFiniteValue(row.loanBalanceAmount));
-    const priceFields = hasInvestors
+    const hasVolume = sorted.some(row => (row.volume ?? 0) > 0 || (row.tradingValue ?? 0) > 0);
+    const availablePriceFields = hasInvestors
         ? closeOnly ? PRICE_FIELDS.filter(field => field === 'close' || field === 'volume') : PRICE_FIELDS
         : ['close', 'changePercent', 'volume'] as const;
+    const priceFields = availablePriceFields.filter(field => field !== 'volume' || hasVolume);
     const summaryGroups = groups.filter(group => investors === 'all' || investors.includes(group));
     const visibleRows = useMemo(() => [...sorted].reverse().slice(0, visibleCount), [sorted, visibleCount]);
     const number = new Intl.NumberFormat(i18n.resolvedLanguage, {maximumFractionDigits: 2});

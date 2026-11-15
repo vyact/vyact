@@ -123,7 +123,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const {rise, fall} = MARKET_COLORS[market];
     const bars = useMemo(() => aggregatePrices(rows, interval), [rows, interval]);
     const activityField = chartActivityField(rows);
-    const hasActivity = rows.some(row => row[activityField] != null);
+    const hasActivity = rows.some(row => (row[activityField] ?? 0) > 0);
     const chartRevision = useMemo(() => ({locale, market, t, indicators, indicatorSettings, returnMode}), [locale, market, t, indicators, indicatorSettings, returnMode]);
     const comparisonSnapshot = useRef<ChartSnapshotContext['comparisons']>([]);
     const snapshotSettings = useRef({symbol, name, interval, maEnabled, movingAverages, indicators, indicatorSettings, returnMode});
@@ -503,7 +503,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 setResetVersion(value => value + 1);
             }}/>
         </div>
-        {quoteMode === 'header' && !returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market}/>}
+        {quoteMode === 'header' && !returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} showActivity={hasActivity}/>}
         {memoLoadFailed && <div className="stock-memo-error" role="alert">
             {t('stockAnalysis.memoLoadError')}
             <button type="button" className="modal-action-cancel" onClick={() => {
@@ -524,7 +524,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 {!returnMode && <div className="stock-chart-quote-heading">
                     <strong>{name}</strong><time dateTime={quote.day}>{quote.day}</time>
                 </div>}
-                {!returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} detailed/>}
+                {!returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} showActivity={hasActivity} detailed/>}
                 <div ref={setComparisonQuoteTarget}/>
             </div>}
             <div className="stock-memo-markers">

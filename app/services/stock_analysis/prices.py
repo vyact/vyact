@@ -7,6 +7,7 @@ import yfinance as yf
 from services.stock_analysis.market_indices import INDEX_SYMBOLS
 from services.stock_analysis.symbols import yahoo_symbol
 
+NO_VOLUME_SYMBOLS = frozenset(('^VIX', '^TNX', 'DX-Y.NYB'))
 MAX_OVERNIGHT_PRICE_RATIO = 4
 PRICE_HISTORY_PERIOD = "10y"
 INDEX_HISTORY_PERIOD = "max"
@@ -28,7 +29,7 @@ def fetch_prices(symbol: str, *, start: str | None = None) -> list[dict]:
         rows.append({
             "day": timestamp.date().isoformat(),
             **prices,
-            "volume": int(volume) if math.isfinite(volume) and volume >= 0 else None,
+            "volume": int(volume) if symbol not in NO_VOLUME_SYMBOLS and math.isfinite(volume) and volume >= 0 else None,
         })
     for previous, current in zip(rows, rows[1:]):
         ratio = current["open"] / previous["close"]

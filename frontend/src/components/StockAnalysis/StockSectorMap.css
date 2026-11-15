@@ -78,7 +78,7 @@
 .stock-sector-preview li {
     display: grid; align-items: center; grid-template-columns: var(--stock-preview-columns);
     gap: 6px var(--stock-preview-column-gap); padding: 0 var(--stock-preview-inline-padding); min-height: 0; border-radius: 4px;
-    font-size: clamp(11px, 1.8vh, 14px); line-height: 1.25;
+    font-size: clamp(10px, 1.4vh, 12px); line-height: 1.25;
     background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 .stock-sector-preview li.focused {background: color-mix(in srgb, var(--accent) 15%, var(--surface2)); box-shadow: inset 3px 0 var(--accent);}

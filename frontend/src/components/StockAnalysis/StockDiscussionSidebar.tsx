@@ -1,3 +1,4 @@
+import {GLOBAL_INDICATOR_SYMBOLS, GLOBAL_INDICATOR_KEYS, isGlobalIndicator} from '../../utils/stockSymbols';
 import {getReasoningRequestValue} from '../../utils/reasoning';
 import StockContextPeriod from './StockContextPeriod';
 import {normalizeContextRange, type StockContextRange} from './stockContextRange';
@@ -24,7 +25,7 @@ import {getToolActivityLabel, getToolActivityDetail, isToolActivityResultFailed}
 import type {DailyPrice, StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import {assertOk} from '../../utils/apiError';
 import {Tooltip} from '../common/Tooltip/Tooltip';
-import StockMarketSelect from './StockMarketSelect';
+import StockReferenceScopeSelect, {type StockReferenceScope} from './StockReferenceScopeSelect';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import useStockDirectory from './useStockDirectory';
@@ -54,6 +55,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
+    const supportsFinancials = !isGlobalIndicator(stock.symbol);
     const contextRange = preferences.periodMode === 'range' ? preferences.lastRange : null;
     const setContextRange = useCallback((range: StockContextRange) => setPreferences(current => ({
         ...current, periodMode: range ? 'range' : 'recent', lastRange: range ?? current.lastRange,
@@ -100,10 +102,12 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
     useStockHistoryShortcut(() => {if (!historyOpen) onReveal?.(); setHistoryOpen(open => !open);}, busy, historyOpen);
     const [preparation, setPreparation] = useState<StockPreparationProgress | null>(null);
     const [error, setError] = useState(false);
-    const [referenceMarket, setReferenceMarket] = useState<StockMarket>(market);
+    const [referenceMarket, setReferenceMarket] = useState<StockReferenceScope>(market);
     const language = i18n.resolvedLanguage ?? i18n.language;
-    const {rows: referenceDirectory, error: directoryError, reload} = useStockDirectory(referenceMarket, language, !groups, market, directory);
-    const referenceCandidates = [...MARKET_INDEX_LABELS[referenceMarket].map(item => ({symbol: item.symbol, name: t(`stockAnalysis.${item.key}`)})), ...(referenceDirectory ?? [])];
+    const {rows: referenceDirectory, error: directoryError, reload} = useStockDirectory(referenceMarket === 'global' ? market : referenceMarket, language, !groups && referenceMarket !== 'global', market, directory);
+    const referenceCandidates = referenceMarket === 'global'
+        ? GLOBAL_INDICATOR_SYMBOLS.map(symbol => ({symbol, name: t(`stockAnalysis.globalIndicators.${GLOBAL_INDICATOR_KEYS[symbol]}`)}))
+        : [...MARKET_INDEX_LABELS[referenceMarket].map(item => ({symbol: item.symbol, name: t(`stockAnalysis.${item.key}`)})), ...(referenceDirectory ?? [])];
     const textarea = useRef<HTMLTextAreaElement>(null);
     useAutoSizeTextarea(textarea, question, 180);
     const controller = useRef<AbortController | null>(null);
@@ -200,7 +204,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
                 body: JSON.stringify({attachments, stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
                     groups: groups?.map(group => ({name: group.name, total_stocks: group.totalStocks, selection_limit: group.selectionLimit, stocks: group.symbols.map(symbol => ({symbol, name: directory.find(item => item.symbol === symbol)?.name ?? symbol}))})),
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
-                    reasoning: getReasoningRequestValue(), context_days: contextRange ? MAX_CONTEXT_DAYS : preferences.days, context_start: contextRange?.start, context_end: contextRange?.end, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
+                    reasoning: getReasoningRequestValue(), context_days: contextRange ? MAX_CONTEXT_DAYS : preferences.days, context_start: contextRange?.start, context_end: contextRange?.end, include_financials: supportsFinancials && preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
                     language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT).map(({role, content, attachments}) => ({role, content, attachments})).filter(message => message.content.trim())}),
             });
             await assertOk(response);
@@ -293,7 +297,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>
             <CustomSelect optionsPageSize={100} value="" searchable portal disabled={busy || referenceStocks.length >= MAX_REFERENCE_STOCKS}
                 ariaLabel={tr('addReference')} placeholder={tr('addReference')}
-                header={<div className="stock-reference-market"><StockMarketSelect value={referenceMarket} onChange={setReferenceMarket} compact portal={false}/></div>}
+                header={<div className="stock-reference-market"><StockReferenceScopeSelect value={referenceMarket} onChange={setReferenceMarket}/></div>}
                 options={referenceCandidates.filter(item => item.symbol !== stock.symbol && !referenceStocks.some(reference => reference.symbol === item.symbol))
                     .map(item => ({value: item.symbol, label: `${item.name} · ${item.symbol}`}))}
                 onChange={symbol => {
@@ -301,7 +305,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
                     if (selected) setReferenceStocks(current => current.length < MAX_REFERENCE_STOCKS && !current.some(item => item.symbol === symbol) ? [...current, selected] : current);
                 }}/>
             </div>
-            {directoryError && <button type="button" className="modal-action-cancel" onClick={reload}>{t('stockAnalysis.retry')}</button>}
+            {referenceMarket !== 'global' && directoryError && <button type="button" className="modal-action-cancel" onClick={reload}>{t('stockAnalysis.retry')}</button>}
             {referenceStocks.length > 0 && <ul>{referenceStocks.map(item => <li key={item.symbol}>
                 <span>{item.name} <small>{item.symbol}</small></span>
                 <button type="button" disabled={busy} aria-label={t('stockAnalysis.discussion.removeReference', {name: item.name})}
@@ -371,11 +375,11 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
                                 </span>
                             </button>}
 
-                            <div className="stock-discussion-financials-option">
+                            {supportsFinancials && <div className="stock-discussion-financials-option">
                                 <span className="stock-discussion-financials-label">{tr('includeFinancials')}</span>
                                 <ToggleSwitch label={tr('includeFinancials')} checked={preferences.includeFinancials} disabled={busy}
                                     onChange={includeFinancials => setPreferences(current => ({...current, includeFinancials}))}/>
-                            </div>
+                            </div>}
 
                             {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
                                 onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false); setPreparation(null);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>

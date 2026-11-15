@@ -1833,6 +1833,20 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "US 10Y yield",
+      "title": "Global markets",
+      "period": "20 trading days · Daily",
+      "oil": "WTI futures",
+      "gold": "Gold futures",
+      "dollar": "Dollar index",
+      "points": "Index",
+      "unavailable": "Unavailable",
+      "error": "Could not refresh. Previously loaded quotes may be outdated.",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "Open Naver Finance", "toss": "Open Toss Securities", "dart": "Open DART disclosures"},
     "chartActions": {
       "comparisonMode": "Comparison mode",

@@ -1,6 +1,8 @@
 .stock-news {display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; gap: 8px;}
-.stock-news-body {gap: 14px;}
-.stock-news ul {list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;}
+.stock-analysis-content.stock-analysis-content-news {overflow: hidden; min-height: 0;}
+.stock-analysis-content-news > .stock-analysis-heading, .stock-analysis-content-news > .stock-analysis-detail-tabs {flex-shrink: 0;}
+.stock-news .stock-news-body {gap: 14px; min-height: 0; overflow: hidden;}
+.stock-news ul {list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; scrollbar-gutter: stable;}
 .stock-news li {padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2);}
 .stock-news li > a {color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere;}
 .stock-news li > a:hover {color: var(--accent); text-decoration: underline;}

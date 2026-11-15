@@ -19,6 +19,7 @@ from services.mcp_config import build_servers_config
 from services.db import SETTINGS_INDEX, STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index, get_es
 from services.stock_analysis.api_settings import (ApiValidationRequest, EndpointKind, MarketApiSettings, STOCK_SYMBOL_PATTERN, validate_api_settings, custom_data, load_api_settings, public_settings, save_api_settings, delete_api_key, symbol_market)
 from services.stock_analysis.catalog import Market, get_symbols
+from services.stock_analysis.global_indicators import GLOBAL_INDICATOR_SYMBOLS, get_global_indicators
 from services.stock_analysis.market_indices import MARKET_INDEX_SYMBOLS, get_market_indices
 from services.stock_analysis.market_sessions import active_session, FUTURES_CALENDAR, MARKET_CASH_CALENDARS
 from services.stock_analysis.index_price_store import get_index_prices
@@ -134,6 +135,11 @@ async def list_symbols(market: Market, language: str = "en"):
         raise HTTPException(502, "directory_unavailable") from exc
 
 
+@router.get("/global-indicators")
+async def global_indicators():
+    return await asyncio.to_thread(get_global_indicators)
+
+
 @router.get("/market-indices")
 async def market_indices(response: Response, market: Market = "US"):
     response.headers["Cache-Control"] = "no-store"
@@ -218,10 +224,17 @@ async def sparkline(symbol: Symbol):
         raise HTTPException(502, "price_unavailable") from exc
 
 
+@router.get("/global-indicators/prices/{symbol}")
+async def global_indicator_prices(symbol: Symbol, response: Response):
+    if symbol not in GLOBAL_INDICATOR_SYMBOLS:
+        raise HTTPException(404, "global_indicator_not_found")
+    return await daily_prices(symbol, response)
+
+
 @router.get("/prices/{symbol}")
 async def daily_prices(symbol: Symbol, response: Response):
     response.headers["Cache-Control"] = "no-store"
-    custom = await custom_data(symbol_market(symbol), 'prices', symbol=symbol)
+    custom = None if symbol in GLOBAL_INDICATOR_SYMBOLS else await custom_data(symbol_market(symbol), 'prices', symbol=symbol)
     if custom is not None:
         return custom
     try:
@@ -455,7 +468,8 @@ async def build_stock_chat_prompts(body, prepared=None):
         if symbol in seen_symbols:
             continue
         seen_symbols.add(symbol)
-        financial_symbols.append(symbol)
+        if symbol not in GLOBAL_INDICATOR_SYMBOLS:
+            financial_symbols.append(symbol)
         reference_prices = await load_prices(symbol)
         reference_context.append(
             f"Reference instrument: {reference.name} ({symbol})\n"
@@ -468,7 +482,7 @@ async def build_stock_chat_prompts(body, prepared=None):
             return await load_prices(symbol)
         group_context, financial_symbols = await build_group_chat_context(body.groups, body.context_days, load_group_prices)
     financial_context = ""
-    if body.include_financials:
+    if body.include_financials and body.symbol not in GLOBAL_INDICATOR_SYMBOLS:
         contexts = ([prepared['financials'].get(public_symbol(symbol), '') for symbol in financial_symbols]
                     if prepared is not None else await asyncio.gather(*(build_financial_chat_context(symbol) for symbol in financial_symbols)))
         financial_context = "\n".join(context for context in contexts if context) + "\n"
@@ -511,6 +525,8 @@ async def stream_prepared_stock_answer(body):
         return await daily_prices(symbol, Response())
 
     async def load_financials(symbol):
+        if symbol in GLOBAL_INDICATOR_SYMBOLS:
+            return '', True
         return await build_financial_chat_context(symbol, with_status=True)
 
     try:

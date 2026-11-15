@@ -1834,6 +1834,20 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "Taux américain à 10 ans",
+      "title": "Marchés mondiaux",
+      "period": "20 séances · Quotidien",
+      "oil": "Contrats WTI",
+      "gold": "Contrats sur or",
+      "dollar": "Indice du dollar",
+      "points": "Indice",
+      "unavailable": "Indisponible",
+      "error": "Actualisation impossible. Les cours précédents peuvent être périmés.",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "Ouvrir Naver Finance", "toss": "Ouvrir Toss Securities", "dart": "Ouvrir les publications DART"},
     "chartActions": {
       "comparisonMode": "Mode de comparaison",

@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "Lợi suất Mỹ 10 năm",
+      "title": "Thị trường toàn cầu",
+      "period": "20 phiên · Hàng ngày",
+      "oil": "Dầu WTI kỳ hạn",
+      "gold": "Vàng kỳ hạn",
+      "dollar": "Chỉ số đô la",
+      "points": "Chỉ số",
+      "unavailable": "Không có dữ liệu",
+      "error": "Không thể cập nhật. Giá trước đó có thể đã cũ.",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "Mở Naver Finance", "toss": "Mở Toss Securities", "dart": "Mở công bố DART"},
     "chartActions": {
       "comparisonMode": "Chế độ so sánh",

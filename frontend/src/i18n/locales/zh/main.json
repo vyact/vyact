@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "globalIndicators": {
+      "treasury": "美国10年期国债收益率",
+      "title": "全球市场指标",
+      "period": "20个交易日 · 日线",
+      "oil": "WTI原油期货",
+      "gold": "黄金期货",
+      "dollar": "美元指数",
+      "points": "指数",
+      "unavailable": "暂无数据",
+      "error": "更新失败，可能显示此前的行情。",
+      "vix": "VIX",
+      "usd": "USD",
+      "source": "Yahoo Finance"
+    },
     "externalLinks": {"naver": "打开Naver证券", "toss": "打开Toss证券", "dart": "打开DART公告"},
     "chartActions": {
       "comparisonMode": "比较模式",
