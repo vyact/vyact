@@ -1866,6 +1866,7 @@
       "failed": "Thao tác thất bại. Hãy thử lưu ảnh."
     },
     "chartTools": {
+      "pointerClick": "Nhấp — vị trí con trỏ",
       "period": "Khoảng thời gian",
       "months": "{{count}} tháng",
       "year": "1 năm",

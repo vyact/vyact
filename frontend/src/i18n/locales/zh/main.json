@@ -1866,6 +1866,7 @@
       "failed": "图片操作失败，请尝试保存。"
     },
     "chartTools": {
+      "pointerClick": "点击 — 指针位置",
       "period": "显示范围",
       "months": "{{count}}个月",
       "year": "1年",

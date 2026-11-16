@@ -1876,6 +1876,7 @@
       "failed": "이미지 처리에 실패했습니다. 저장 기능을 이용해 주세요."
     },
     "chartTools": {
+      "pointerClick": "클릭 — 포인터 위치",
       "period": "조회 기간",
       "months": "{{count}}개월",
       "year": "1년",

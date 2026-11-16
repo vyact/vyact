@@ -1867,6 +1867,7 @@
       "failed": "Image operation failed. Try saving the image."
     },
     "chartTools": {
+      "pointerClick": "Click — pointer position",
       "period": "Range",
       "months": "{{count}}M",
       "year": "1Y",
