@@ -1,3 +1,4 @@
+import ChartToolShortcuts from './ChartToolShortcuts';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {attachBandFill} from './chartBandFill';
 import {OVERLAY_INDICATORS, type OverlayIndicator} from './overlayIndicators';
@@ -5,7 +6,7 @@ import IndicatorSettingsDialog from './IndicatorSettingsDialog';
 import IndicatorLegends from './IndicatorLegends';
 import {readIndicatorSettings, INDICATOR_SETTINGS_KEY} from './indicatorSettings';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject} from 'react';
-import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type MouseEventParams} from 'lightweight-charts';
+import {CandlestickSeries, CrosshairMode, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type MouseEventParams} from 'lightweight-charts';
 import {Eraser, ListX, Pencil, Ruler, Settings, Trash2, Minus, TrendingUp} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft, type StockSymbol} from '../../services/stockAnalysis';
@@ -66,6 +67,8 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const container = useRef<HTMLDivElement>(null);
     const drawings = useRef<ReturnType<typeof attachChartDrawings> | null>(null);
     const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
+    const [drawingInProgress, setDrawingInProgress] = useState(false);
+    const [measurementInProgress, setMeasurementInProgress] = useState(false);
     const ruler = useRef<ReturnType<typeof attachChartRuler> | null>(null);
     const chart = useRef<IChartApi | null>(null);
     const [comparisonQuoteTarget, setComparisonQuoteTarget] = useState<HTMLDivElement | null>(null);
@@ -300,9 +303,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         const measurement = attachChartRuler(instance, candles, bars, (change, periods) => {
             const text = t('stockAnalysis.measureResult', {change: `${change < 0 ? '▼' : change > 0 ? '▲' : '•'} ${percent.format(Math.abs(change))}`, periods: number.format(periods)});
             return text;
-        }, {rise, fall});
+        }, {rise, fall}, setMeasurementInProgress);
         ruler.current = measurement;
-        const drawing = attachChartDrawings(instance, candles, bars);
+        const drawing = attachChartDrawings(instance, candles, bars, setDrawingInProgress);
         drawings.current = drawing;
         updateChartData.current = rows => {
             const position = crosshairPosition.current;
@@ -335,6 +338,10 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 layout: {background: {color: color('--bg')}, textColor: color('--text'),
                     panes: {separatorColor: color('--info'), separatorHoverColor: 'transparent'}},
                 grid: {vertLines: {visible: false}, horzLines: {color: border}},
+                crosshair: {
+                    horzLine: {color: color('--info'), width: 1, style: 2, labelBackgroundColor: color('--info')},
+                    vertLine: {color: color('--info'), width: 1, style: 2, labelBackgroundColor: color('--info')},
+                },
                 rightPriceScale: {borderColor: border},
                 timeScale: {borderColor: border},
             });
@@ -385,8 +392,11 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     }, [bars, interval, market, locale, t, maEnabled, movingAverages, indicators, indicatorSettings, returnMode]);
 
     useEffect(() => {
-        drawings.current?.setMode(!returnMode && !settingsOpen && !indicatorSettingsOpen && !memoDialog ? drawingMode : null);
-        ruler.current?.setEnabled(!returnMode && measuring && !settingsOpen && !indicatorSettingsOpen && !memoDialog);
+        const activeDrawingMode = !returnMode && !settingsOpen && !indicatorSettingsOpen && !memoDialog ? drawingMode : null;
+        const rulerEnabled = !returnMode && measuring && !settingsOpen && !indicatorSettingsOpen && !memoDialog;
+        chart.current?.applyOptions({crosshair: {mode: activeDrawingMode || rulerEnabled ? CrosshairMode.Normal : CrosshairMode.Magnet}});
+        drawings.current?.setMode(activeDrawingMode);
+        ruler.current?.setEnabled(rulerEnabled);
     }, [bars, interval, market, locale, t, measuring, drawingMode, returnMode, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
 
     useEffect(() => {
@@ -449,19 +459,12 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 {t(`stockAnalysis.interval.${value}`)}
             </button>)}
             <Tooltip multiline hoverOnly content={
-                <div className="rich-tooltip-content stock-chart-ruler-shortcuts">
-                    <strong className="rich-tooltip-title">{t('stockAnalysis.rulerPurpose')}</strong>
-                    <div><span>{t('stockAnalysis.rulerClick')}</span></div>
-                    <div style={{color: rise}}><kbd>H</kbd><span>{t('stockAnalysis.high')}</span></div>
-                    <div style={{color: fall}}><kbd>L</kbd><span>{t('stockAnalysis.low')}</span></div>
-                    <div className="stock-chart-ruler-open"><kbd>O</kbd><span>{t('stockAnalysis.open')}</span></div>
-                    <small>{t('stockAnalysis.rulerHoldKey')}</small>
-                </div>
+                <ChartToolShortcuts title={t('stockAnalysis.rulerPurpose')} rise={rise} fall={fall}/>
             }>
                 <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-ruler" disabled={returnMode} aria-pressed={measuring}
                         aria-label={t('stockAnalysis.ruler')} onClick={() => {setDrawingMode(null); setMeasuring(value => !value);}}><Ruler size={17}/></button>
             </Tooltip>
-                {(['horizontal', 'trend'] as const).map(mode => <Tooltip key={mode} content={t(`stockAnalysis.chartTools.${mode}`)}>
+                {(['horizontal', 'trend'] as const).map(mode => <Tooltip key={mode} multiline hoverOnly content={<ChartToolShortcuts title={t(`stockAnalysis.chartTools.${mode}`)} rise={rise} fall={fall} pointerDefault/>}>
                     <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-drawing" disabled={returnMode} aria-pressed={drawingMode === mode}
                         aria-label={t(`stockAnalysis.chartTools.${mode}`)} onClick={() => {setMeasuring(false); setDrawingMode(current => current === mode ? null : mode);}}>
                         {mode === 'horizontal' ? <Minus size={17} aria-hidden="true"/> : <TrendingUp size={17} aria-hidden="true"/>}
@@ -513,7 +516,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         </div>}
         <div className="stock-chart-plot">
             <div ref={container} className="stock-price-chart-canvas"/>
-            {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && (returnMode || (!drawingMode && !measuring)) && !settingsOpen && !memoDialog && <div
+            {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && (returnMode || (!drawingInProgress && !measurementInProgress)) && !settingsOpen && !memoDialog && <div
                 className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: Math.max(8,
                     hoverPoint.x + 40 + quoteTooltipWidth <= hoverPoint.chartWidth - 8
                         ? hoverPoint.x + 40 : hoverPoint.x - quoteTooltipWidth - 40,

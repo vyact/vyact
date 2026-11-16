@@ -1867,6 +1867,7 @@
       "failed": "Échec de l’opération. Essayez d’enregistrer l’image."
     },
     "chartTools": {
+      "pointerClick": "Clic — position du pointeur",
       "period": "Période",
       "months": "{{count}} mois",
       "year": "1 an",

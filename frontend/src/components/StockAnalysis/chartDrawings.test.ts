@@ -7,21 +7,36 @@ it('keeps drawings temporary and supports undo', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value)});
     vi.stubGlobal('getComputedStyle', () => ({getPropertyValue: () => '#60a5fa'}));
-    vi.stubGlobal('window', {addEventListener: vi.fn(), removeEventListener: vi.fn()});
+    const keyboard = new Map<string, (event: object) => void>();
+    vi.stubGlobal('Element', class {});
+    vi.stubGlobal('window', {addEventListener: (name: string, callback: (event: object) => void) => keyboard.set(name, callback), removeEventListener: vi.fn()});
     const listeners = new Map<string, (event: {clientX: number; clientY: number}) => void>();
     const element = {addEventListener: (name: string, callback: (event: {clientX: number; clientY: number}) => void) => listeners.set(name, callback),
         removeEventListener: vi.fn(), getBoundingClientRect: () => ({left: 0, top: 0})};
     const chart = {chartElement: () => element, addSeries: () => ({setData: vi.fn()}), removeSeries: vi.fn(),
         paneSize: () => ({width: 100, height: 100}), timeScale: () => ({coordinateToTime: () => '2026-11-02'}),
-        subscribeCrosshairMove: vi.fn(), unsubscribeCrosshairMove: vi.fn()};
+        setCrosshairPosition: vi.fn(), subscribeCrosshairMove: vi.fn(), unsubscribeCrosshairMove: vi.fn()};
     const candles = {coordinateToPrice: (y: number) => y * 10, createPriceLine: vi.fn(() => ({})), removePriceLine: vi.fn()};
     const rows = [{day: '2026-11-02', close: 100, open: 100, high: 110, low: 90, volume: null}] as DailyPrice[];
     const attach = () => attachChartDrawings(chart as unknown as IChartApi, candles as unknown as ISeriesApi<'Candlestick'>, rows);
     const drawing = attach(); drawing.setMode('horizontal');
     listeners.get('pointerdown')?.({clientX: 0, clientY: 25}); listeners.get('click')?.({clientX: 0, clientY: 25});
     expect(candles.createPriceLine).toHaveBeenLastCalledWith(expect.objectContaining({price: 250}));
+    listeners.get('mousemove')?.({clientX: 0, clientY: 25});
+    expect(chart.setCrosshairPosition).toHaveBeenLastCalledWith(250, '2026-11-02', candles);
+    for (const [code, price] of [['KeyH', 110], ['KeyL', 90], ['KeyO', 100], ['KeyC', 100]] as const) {
+        keyboard.get('keydown')?.({code});
+        expect(chart.setCrosshairPosition).toHaveBeenLastCalledWith(price, '2026-11-02', candles);
+        listeners.get('pointerdown')?.({clientX: 0, clientY: 25}); listeners.get('click')?.({clientX: 0, clientY: 25});
+        expect(candles.createPriceLine).toHaveBeenLastCalledWith(expect.objectContaining({price}));
+        keyboard.get('keyup')?.({code});
+        expect(chart.setCrosshairPosition).toHaveBeenLastCalledWith(250, '2026-11-02', candles);
+    }
+    listeners.get('pointerdown')?.({clientX: 0, clientY: 25}); listeners.get('click')?.({clientX: 0, clientY: 25});
+    expect(candles.createPriceLine).toHaveBeenLastCalledWith(expect.objectContaining({price: 250}));
     drawing.undo(); expect(candles.removePriceLine).toHaveBeenCalled();
+    const lineCount = candles.createPriceLine.mock.calls.length;
     drawing.dispose(); attach();
-    expect(candles.createPriceLine).toHaveBeenCalledTimes(1);
+    expect(candles.createPriceLine).toHaveBeenCalledTimes(lineCount);
     expect(storage.size).toBe(0);
 });

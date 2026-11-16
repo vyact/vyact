@@ -1866,6 +1866,7 @@
       "failed": "Error al procesar la imagen. Intenta guardarla."
     },
     "chartTools": {
+      "pointerClick": "Clic — posición del puntero",
       "period": "Periodo",
       "months": "{{count}} meses",
       "year": "1 año",

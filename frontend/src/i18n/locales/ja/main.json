@@ -1865,6 +1865,7 @@
       "failed": "画像の処理に失敗しました。保存をお試しください。"
     },
     "chartTools": {
+      "pointerClick": "クリック — ポインター位置",
       "period": "表示期間",
       "months": "{{count}}か月",
       "year": "1年",

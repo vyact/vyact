@@ -13,7 +13,7 @@ export function chartDay(time: Time | undefined): string | undefined {
 
 export function attachChartRuler(
     chart: IChartApi, candles: ISeriesApi<'Candlestick'>, rows: DailyPrice[],
-    formatResult: (change: number, periods: number) => string, colors: {rise: string; fall: string},
+    formatResult: (change: number, periods: number) => string, colors: {rise: string; fall: string}, onDrawingChange?: (active: boolean) => void,
 ) {
     let enabled = false;
     let updatingPreview = false;
@@ -65,12 +65,15 @@ export function attachChartRuler(
     const setLine = (line: ISeriesApi<'Line'>, first: Point, last: Point) => {
         line.setData([{time: first.day, value: first.value}, {time: last.day, value: last.value}]);
     };
-    const onMove = (event: MouseEventParams) => {
-        if (!enabled || !start || updatingPreview) return;
-        const end = event.paneIndex === 0 && event.point ? getPoint(event.time) : undefined;
+    let hoveredTime: Time | undefined;
+    const updatePreview = () => {
+        if (!enabled || updatingPreview) return;
+        const end = getPoint(hoveredTime);
         // Updating a series can synchronously emit another crosshair event.
         updatingPreview = true;
         try {
+            if (end) chart.setCrosshairPosition(end.value, end.day, candles);
+            if (!start) return;
             if (!end || end.index === start.index) {
                 preview.setData([]);
                 return;
@@ -80,6 +83,11 @@ export function attachChartRuler(
         } finally {
             updatingPreview = false;
         }
+    };
+    const onMove = (event: MouseEventParams) => {
+        if (updatingPreview) return;
+        hoveredTime = event.paneIndex === 0 && event.point ? event.time : undefined;
+        updatePreview();
     };
     const onPointerDown = (event: PointerEvent) => {
         pointerStart = {x: event.clientX, y: event.clientY};
@@ -96,6 +104,7 @@ export function attachChartRuler(
         if (!end) return;
         if (!start) {
             start = end;
+            onDrawingChange?.(true);
             updateMarkers();
             return;
         }
@@ -114,16 +123,20 @@ export function attachChartRuler(
         measurements.push({line, markers: [dot(first), dot(last)], end: last, label});
         positionLabels();
         start = undefined;
+        onDrawingChange?.(false);
         preview.setData([]);
         updateMarkers();
     };
     const keyDown = (event: KeyboardEvent) => {
         if (!enabled || event.metaKey || event.ctrlKey || event.altKey || event.isComposing ||
             (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], .app-modal-overlay'))) return;
-        if (event.code === 'KeyH' || event.code === 'KeyL' || event.code === 'KeyO') key = event.code;
+        if (event.code === 'KeyH' || event.code === 'KeyL' || event.code === 'KeyO') {
+            key = event.code;
+            updatePreview();
+        }
     };
-    const keyUp = (event: KeyboardEvent) => {if (key === event.code) key = undefined;};
-    const resetKey = () => {key = undefined;};
+    const keyUp = (event: KeyboardEvent) => {if (key === event.code) {key = undefined; updatePreview();}};
+    const resetKey = () => {key = undefined; updatePreview();};
 
     element.addEventListener('pointerdown', onPointerDown);
     element.addEventListener('click', onClick);
@@ -146,6 +159,7 @@ export function attachChartRuler(
             if (!value) {
                 key = undefined;
                 start = undefined;
+                onDrawingChange?.(false);
                 preview.setData([]);
                 updateMarkers();
             }
@@ -160,6 +174,7 @@ export function attachChartRuler(
         },
         clear() {
             start = undefined;
+            onDrawingChange?.(false);
             preview.setData([]);
             for (const {line, label} of measurements.splice(0)) {
                 chart.removeSeries(line);
@@ -168,6 +183,7 @@ export function attachChartRuler(
             updateMarkers();
         },
         dispose() {
+            onDrawingChange?.(false);
             element.removeEventListener('pointerdown', onPointerDown);
             element.removeEventListener('click', onClick);
             chart.unsubscribeCrosshairMove(onMove);
