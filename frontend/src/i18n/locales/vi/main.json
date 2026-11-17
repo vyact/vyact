@@ -1894,7 +1894,7 @@
     },
     "news": {
       "tab": "Tin tức",
-      "empty": "Không có tin tức cho mã này.",
+      "empty": "Không có tin tức liên quan.",
       "error": "Không thể tải tin tức. Vui lòng thử lại.",
       "source": "Nguồn: Yahoo Finance · Tin tức và thông cáo báo chí"
     },

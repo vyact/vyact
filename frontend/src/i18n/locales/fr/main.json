@@ -1896,7 +1896,7 @@
     },
     "news": {
       "tab": "Actualités",
-      "empty": "Aucune actualité pour ce titre.",
+      "empty": "Aucune actualité associée disponible.",
       "error": "Impossible de charger les actualités. Veuillez réessayer.",
       "source": "Source : Yahoo Finance · Actualités et communiqués de presse"
     },

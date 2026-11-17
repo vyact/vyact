@@ -1,4 +1,4 @@
-import {isGlobalIndicator} from '../../utils/stockSymbols';
+import {isGlobalIndicator, supportsStockFinancials} from '../../utils/stockSymbols';
 import GlobalMarketIndicators from './GlobalMarketIndicators';
 import PinnedIndexBar from './PinnedIndexBar';
 import StockExternalLinks from './StockExternalLinks';
@@ -139,6 +139,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const chartVisible = detailTab === 'chart';
     const activeSymbol = active?.symbol;
     const globalIndicator = !!activeSymbol && isGlobalIndicator(activeSymbol);
+    const supportsFinancials = !!activeSymbol && supportsStockFinancials(activeSymbol);
     const instrumentMarket = globalIndicator ? 'US' : market;
     const directory = withMarketIndices(market, symbols, tr);
     const watchlistCount = directory.filter(item => watchlist.contains(market, item.symbol)).length;
@@ -373,7 +374,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 </div>
             </div>}
             {active && <div className="stock-analysis-detail-tabs"><ModalTabs
-                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, ...(!globalIndicator ? [{key: 'financials' as const, label: tr('financials.tab')}] : []), {key: 'news', label: tr('news.tab')}]}
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, ...(supportsFinancials ? [{key: 'financials' as const, label: tr('financials.tab')}] : []), {key: 'news', label: tr('news.tab')}]}
                 activeKey={detailTab} onChange={setDetailTab}/></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
             <div className="stock-analysis-chart-stage" aria-busy={loading}>
@@ -392,7 +393,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
                 {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={instrumentMarket}/>}
             </div>}
-            {active && !globalIndicator && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
+            {active && supportsFinancials && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
             {active && detailTab === 'news' && <div className="stock-analysis-detail-panel">

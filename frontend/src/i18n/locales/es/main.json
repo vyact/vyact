@@ -1895,7 +1895,7 @@
     },
     "news": {
       "tab": "Noticias",
-      "empty": "No hay noticias para este símbolo.",
+      "empty": "No hay noticias relacionadas.",
       "error": "No se pudieron cargar las noticias. Inténtalo de nuevo.",
       "source": "Fuente: Yahoo Finance · Noticias y comunicados de prensa"
     },

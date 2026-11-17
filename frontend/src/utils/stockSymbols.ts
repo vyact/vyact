@@ -32,6 +32,10 @@ export function isGlobalIndicator(symbol: string): boolean {
     return GLOBAL_INDICATOR_SYMBOLS.some(item => item === symbol);
 }
 
+export function supportsStockFinancials(symbol: string): boolean {
+    return !isMarketIndexSymbol(symbol) && !isGlobalIndicator(symbol);
+}
+
 export const GLOBAL_INDICATOR_KEYS: Record<typeof GLOBAL_INDICATOR_SYMBOLS[number], string> = {
     '^VIX': 'vix', 'CL=F': 'oil', 'GC=F': 'gold', 'DX-Y.NYB': 'dollar', '^TNX': 'treasury',
 };

@@ -1895,7 +1895,7 @@
     },
     "news": {
       "tab": "News",
-      "empty": "No news is available for this symbol.",
+      "empty": "No related news is available.",
       "error": "Unable to load news. Please try again.",
       "source": "Source: Yahoo Finance · News and press releases"
     },
