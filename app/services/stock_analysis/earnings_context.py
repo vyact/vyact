@@ -7,6 +7,28 @@ from services.stock_analysis.symbols import symbol_market
 SUPPLEMENT_PERIOD_LIMIT = 5
 
 
+async def supplement_financial_statements(symbol, frequency, financials):
+    if symbol_market(symbol) != 'KR':
+        return financials
+    try:
+        earnings = await custom_data('KR', 'earnings', symbol=symbol)
+    except Exception:
+        return financials
+    if not earnings or financials.get('currency') not in (None, 'KRW'):
+        return financials
+    results = [financials, {}] if frequency == 'yearly' else [{}, financials]
+    supplements = [row for row in missing_earnings_periods(earnings, results) if row['frequency'] == frequency]
+    if not supplements:
+        return financials
+    income = financials.get('statements', {}).get('income', [])
+    replaced_periods = {row['period'] for row in supplements}
+    periods = [row for row in income if row['period'] not in replaced_periods]
+    periods.extend({'period': row['period'], 'values': row['values'], 'source': 'DART',
+                    'preliminary': row['preliminary']} for row in supplements)
+    return {**financials, 'currency': 'KRW',
+            'statements': {**financials['statements'], 'income': sorted(periods, key=lambda row: row['period'], reverse=True)}}
+
+
 def missing_earnings_periods(earnings, yahoo_results):
     known_periods = set()
     for frequency, result in zip(('yearly', 'quarterly'), yahoo_results):

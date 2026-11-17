@@ -29,6 +29,7 @@ from services.stock_analysis.chat_preparation import prepare_stock_chat
 from services.stock_analysis.group_chat_context import build_group_chat_context, select_context_prices
 from services.stock_analysis.financial_context import build_financial_chat_context
 from services.stock_analysis.financial_store import get_financials
+from services.stock_analysis.earnings_context import supplement_financial_statements
 from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
 from services.stock_analysis.news import fetch_news
 from services.stock_analysis.url_context import build_url_chat_context
@@ -631,7 +632,8 @@ async def financial_collection_action(market: Market, action: Literal['start', '
 async def stock_financials(symbol: Symbol, response: Response, frequency: Literal["yearly", "quarterly"] = "yearly", force: bool = False):
     response.headers["Cache-Control"] = "no-store"
     try:
-        return await get_financials(symbol, frequency, force=force)
+        financials = await get_financials(symbol, frequency, force=force)
+        return await supplement_financial_statements(symbol, frequency, financials)
     except YFRateLimitError as exc:
         raise HTTPException(429, "financials_rate_limited") from exc
     except Exception as exc:

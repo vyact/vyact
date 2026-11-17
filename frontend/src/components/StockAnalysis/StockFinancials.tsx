@@ -61,8 +61,8 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
             return <section className="stock-financials-statement" key={statement} aria-labelledby={`financial-${statement}-${symbol}`}>
                 <h3 id={`financial-${statement}-${symbol}`}>{tr(statement)}</h3>
                 {!periods.length ? <p className="stock-financials-note">{tr('empty')}</p> : <div className="stock-financials-table-wrap"><table>
-                    <thead><tr><th scope="col">{tr('metric')}{data.currency && <small className="stock-financials-currency">{data.currency}</small>}</th>{visiblePeriods.map(period => <th scope="col" key={period.period}>{new Intl.DateTimeFormat(language, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'}).format(new Date(`${period.period}T00:00:00Z`))}</th>)}</tr></thead>
-                    <tbody>{FINANCIAL_METRICS[statement].map(metric => <tr key={metric}><th scope="row">{tr(metric)}</th>{visiblePeriods.map(period => <td key={period.period}>
+                    <thead><tr><th scope="col">{tr('metric')}{data.currency && <small className="stock-financials-currency">{data.currency}</small>}</th>{visiblePeriods.map(period => <th scope="col" key={period.period} data-supplemental={period.source === 'DART' || undefined}>{new Intl.DateTimeFormat(language, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'}).format(new Date(`${period.period}T00:00:00Z`))}</th>)}</tr></thead>
+                    <tbody>{FINANCIAL_METRICS[statement].map(metric => <tr key={metric}><th scope="row">{tr(metric)}</th>{visiblePeriods.map(period => <td key={period.period} data-supplemental={period.source === 'DART' || undefined}>
                         <span className="stock-financials-value">{period.values[metric] == null ? '—' : formatFinancialAmount(period.values[metric], metric, language, tr('hundredMillion'))}</span>
                         <div className="stock-financials-changes">{(frequency === 'quarterly' ? ['qoq', 'yoy'] as const : ['yoy'] as const).map(comparison => {
                             const change = financialChange(periods, period, metric, comparison, frequency);

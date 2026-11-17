@@ -2,7 +2,7 @@ import {assertOk} from '../utils/apiError';
 
 export type FinancialFrequency = 'yearly' | 'quarterly';
 export type StatementKind = 'income' | 'balance' | 'cashflow';
-export interface FinancialPeriod {period: string; values: Record<string, number | null>}
+export interface FinancialPeriod {period: string; values: Record<string, number | null>; source?: 'DART'; preliminary?: boolean}
 export interface StockFinancialData {currency: string | null; statements: Record<StatementKind, FinancialPeriod[]>; checkedAt?: string; refreshing?: boolean; refreshFailed?: boolean; availability?: 'available' | 'empty'}
 export const FINANCIAL_METRICS: Record<StatementKind, string[]> = {
     income: ['revenue', 'operatingIncome', 'netIncome', 'eps'],
