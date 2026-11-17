@@ -15,7 +15,6 @@ export function financialChange(periods: FinancialPeriod[], current: FinancialPe
     if (comparison === 'qoq' && frequency === 'yearly') return null;
     const distance = comparison === 'qoq' ? 1 : 4;
     const previous = periods.find(item => quarterIndex(item.period) === quarterIndex(current.period) - distance);
-    if (current.source === 'DART' || previous?.source === 'DART') return null;
     const value = current.values[metric];
     const baseline = previous?.values[metric];
     if (value == null || baseline == null || baseline === 0) return null;
