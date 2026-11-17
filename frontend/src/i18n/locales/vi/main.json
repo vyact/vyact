@@ -1917,7 +1917,8 @@
     "premarketRegularOpensIn": "Tiền thị trường · Phiên chính sau {{time}}",
     "preferencesSyncFailed": "Đồng bộ nhóm hoặc danh sách theo dõi thất bại · Thử lại",
     "indexNasdaq100": "Nasdaq 100",
-    "shortcuts": {"sortPreview": "Giữ để sắp xếp cổ phiếu xem trước theo phần trăm thay đổi"},
+    "shortcuts": {
+      "back": "Quay lại danh sách","sortPreview": "Giữ để sắp xếp cổ phiếu xem trước theo phần trăm thay đổi"},
     "pinnedIndices": {"limitHint": "Bạn có thể ghim tối đa {{count}} chỉ số", "syncFailed": "Đồng bộ thất bại · Thử lại", "label": "Chỉ số đã ghim", "remove": "Bỏ ghim {{name}}", "dropHint": "Thả vào đây để ghim chỉ số"},
     "TW": "Chứng khoán Đài Loan",
     "HK": "Chứng khoán Hồng Kông",
@@ -1953,7 +1954,9 @@
     },
     "collection": {
       "title": "Thu thập tài chính",
-      "auto": "Tự động cập nhật hằng tuần",
+      "auto": "Tự động cập nhật",
+      "interval": "Chu kỳ cập nhật",
+      "weeks": "{{count}} tuần",
       "hintScope": "Thu thập báo cáo năm và quý của mọi cổ phiếu trong thị trường này.",
       "hintResume": "Thu thập khi ứng dụng đang chạy và tiếp tục sau khi khởi động lại.",
       "hintPause": "Tạm dừng cũng ngừng cập nhật tự động cho đến khi tiếp tục.",

@@ -1918,7 +1918,8 @@
     "premarketRegularOpensIn": "Premarket · Regular open in {{time}}",
     "preferencesSyncFailed": "Groups or watchlist sync failed · Retry",
     "indexNasdaq100": "Nasdaq 100",
-    "shortcuts": {"sortPreview": "Hold to sort preview stocks by percentage change"},
+    "shortcuts": {
+      "back": "Back to overview","sortPreview": "Hold to sort preview stocks by percentage change"},
     "pinnedIndices": {"limitHint": "You can pin up to {{count}} indices", "syncFailed": "Settings sync failed · Retry", "label": "Pinned indices", "remove": "Unpin {{name}}", "dropHint": "Drop here to pin an index"},
     "TW": "Taiwan stocks",
     "HK": "Hong Kong stocks",
@@ -1954,7 +1955,10 @@
     },
     "collection": {
       "title": "Financial collection",
-      "auto": "Automatic weekly update",
+      "auto": "Automatic updates",
+      "interval": "Update interval",
+      "weeks_one": "{{count}} week",
+      "weeks_other": "{{count}} weeks",
       "hintScope": "Collect annual and quarterly financials for all stocks in this market.",
       "hintResume": "Collection runs while the app is open and resumes after restart.",
       "hintPause": "Pausing also suspends automatic updates until you resume.",

@@ -13,7 +13,7 @@ const PERIOD_PAGE_SIZE = 5;
 export default function StockFinancials({symbol, market}: {symbol: string; market: StockMarket}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.financials.${key}`);
-    const [frequency, setFrequency] = useState<FinancialFrequency>('yearly');
+    const [frequency, setFrequency] = useState<FinancialFrequency>('quarterly');
     const [data, setData] = useState<StockFinancialData | null>(null);
     const [error, setError] = useState(false);
     const [retry, setRetry] = useState(0);
@@ -68,7 +68,7 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
                             const change = financialChange(periods, period, metric, comparison, frequency);
                             if (change == null) return null;
                             const direction = change > 0 ? 'increase' : change < 0 ? 'decrease' : 'unchanged';
-                            return <span className="stock-financials-change" data-direction={direction} key={comparison} title={tr(direction)}>
+                            return <span className="stock-financials-change" data-direction={direction} key={comparison}>
                                 <span>{tr(comparison)}</span><span>{`${change > 0 ? '↑ ' : change < 0 ? '↓ ' : ''}${percentFormatter.format(change)}%`}</span>
                             </span>;
                         })}</div>

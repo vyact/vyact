@@ -1927,7 +1927,8 @@
     "premarketRegularOpensIn": "프리마켓 · 정규장까지 {{time}}",
     "preferencesSyncFailed": "그룹·관심종목 동기화 실패 · 재시도",
     "indexNasdaq100": "나스닥 100",
-    "shortcuts": {"sortPreview": "누른 채 종목 미리보기 등락률순 정렬"},
+    "shortcuts": {
+      "back": "목록으로 돌아가기","sortPreview": "누른 채 종목 미리보기 등락률순 정렬"},
     "pinnedIndices": {"limitHint": "최대 {{count}}개까지 고정할 수 있어요", "syncFailed": "설정 동기화 실패 · 재시도", "label": "고정한 지수", "remove": "{{name}} 고정 해제", "dropHint": "여기에 놓아 지수 고정"},
     "TW": "대만 증시",
     "HK": "홍콩 증시",
@@ -1963,7 +1964,9 @@
     },
     "collection": {
       "title": "재무정보 수집",
-      "auto": "매주 자동 업데이트",
+      "auto": "자동 업데이트",
+      "interval": "업데이트 주기",
+      "weeks": "{{count}}주",
       "hintScope": "이 시장 전체 종목의 연간·분기 재무정보를 수집합니다.",
       "hintResume": "앱 실행 중 수집하며, 재시작하면 이어서 진행합니다.",
       "hintPause": "일시정지하면 자동 업데이트도 재개할 때까지 멈춥니다.",

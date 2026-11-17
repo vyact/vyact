@@ -1918,7 +1918,8 @@
     "premarketRegularOpensIn": "Premercado · Apertura regular en {{time}}",
     "preferencesSyncFailed": "Error al sincronizar grupos o favoritos · Reintentar",
     "indexNasdaq100": "Nasdaq 100",
-    "shortcuts": {"sortPreview": "Mantén pulsado para ordenar la vista previa por variación porcentual"},
+    "shortcuts": {
+      "back": "Volver a la lista","sortPreview": "Mantén pulsado para ordenar la vista previa por variación porcentual"},
     "pinnedIndices": {"limitHint": "Puedes fijar hasta {{count}} índices", "syncFailed": "Error de sincronización · Reintentar", "label": "Índices fijados", "remove": "Desfijar {{name}}", "dropHint": "Suelta aquí para fijar un índice"},
     "TW": "Bolsa de Taiwán",
     "HK": "Bolsa de Hong Kong",
@@ -1954,7 +1955,10 @@
     },
     "collection": {
       "title": "Recopilación financiera",
-      "auto": "Actualización semanal automática",
+      "auto": "Actualización automática",
+      "interval": "Intervalo de actualización",
+      "weeks_one": "{{count}} semana",
+      "weeks_other": "{{count}} semanas",
       "hintScope": "Recopila estados anuales y trimestrales de todas las acciones del mercado.",
       "hintResume": "La recopilación funciona con la aplicación abierta y continúa tras reiniciar.",
       "hintPause": "La pausa también suspende las actualizaciones automáticas hasta reanudar.",
