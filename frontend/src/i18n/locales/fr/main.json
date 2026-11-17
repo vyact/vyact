@@ -123,6 +123,20 @@
     "close": "Fermer"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Note du message",
+      "add": "Ajouter une note",
+      "view": "Voir la note",
+      "label": "Note",
+      "placeholder": "Ajoutez un rappel ou un lien utile.",
+      "updated": "Modifiée : {{date}}",
+      "save": "Enregistrer",
+      "edit": "Modifier",
+      "close": "Fermer",
+      "discard": "Ignorer les modifications non enregistrées ?",
+      "keep": "Continuer à modifier",
+      "discardAction": "Ignorer les modifications"
+    },
     "reconnectAccount": "Une authentification est nécessaire. Reconnectez le compte Google ou Microsoft concerné dans les paramètres.",
     "connected": "Connecté",
     "accountNumber": "Compte Google {{number}}",

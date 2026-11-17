@@ -123,6 +123,20 @@
     "close": "Cerrar"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Nota del correo",
+      "add": "Añadir nota",
+      "view": "Ver nota",
+      "label": "Nota",
+      "placeholder": "Añade un recordatorio o un enlace útil.",
+      "updated": "Actualizado: {{date}}",
+      "save": "Guardar",
+      "edit": "Editar",
+      "close": "Cerrar",
+      "discard": "¿Descartar los cambios sin guardar?",
+      "keep": "Seguir editando",
+      "discardAction": "Descartar cambios"
+    },
     "reconnectAccount": "Se requiere autenticar la cuenta. Vuelve a conectar la cuenta de Google o Microsoft afectada en Configuración.",
     "connected": "Conectado",
     "accountNumber": "Cuenta de Google {{number}}",

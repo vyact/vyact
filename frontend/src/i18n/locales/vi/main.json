@@ -123,6 +123,20 @@
     "close": "Đóng"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Ghi chú email",
+      "add": "Thêm ghi chú",
+      "view": "Xem ghi chú",
+      "label": "Ghi chú",
+      "placeholder": "Thêm lời nhắc hoặc liên kết hữu ích.",
+      "updated": "Cập nhật: {{date}}",
+      "save": "Lưu",
+      "edit": "Chỉnh sửa",
+      "close": "Đóng",
+      "discard": "Bỏ thay đổi chưa lưu?",
+      "keep": "Tiếp tục chỉnh sửa",
+      "discardAction": "Bỏ thay đổi"
+    },
     "reconnectAccount": "Cần xác thực tài khoản. Hãy kết nối lại tài khoản Google hoặc Microsoft gặp sự cố trong phần Cài đặt.",
     "connected": "Đã kết nối",
     "accountNumber": "Tài khoản Google {{number}}",

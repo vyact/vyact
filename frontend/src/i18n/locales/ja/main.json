@@ -123,6 +123,20 @@
     "close": "閉じる"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "メールメモ",
+      "add": "メモを追加",
+      "view": "メモを表示",
+      "label": "メモ",
+      "placeholder": "覚えておきたい内容やリンクを残しましょう。",
+      "updated": "更新: {{date}}",
+      "save": "保存",
+      "edit": "編集",
+      "close": "閉じる",
+      "discard": "未保存の変更を破棄しますか？",
+      "keep": "編集を続ける",
+      "discardAction": "変更を破棄"
+    },
     "reconnectAccount": "アカウントの認証が必要です。設定で該当する Google または Microsoft アカウントを再接続してください。",
     "connected": "接続済み",
     "accountNumber": "Google アカウント {{number}}",

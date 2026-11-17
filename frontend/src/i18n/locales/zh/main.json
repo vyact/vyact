@@ -123,6 +123,20 @@
     "close": "关闭"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "邮件备注",
+      "add": "添加备注",
+      "view": "查看备注",
+      "label": "备注",
+      "placeholder": "记录提醒或有用的链接。",
+      "updated": "更新：{{date}}",
+      "save": "保存",
+      "edit": "编辑",
+      "close": "关闭",
+      "discard": "放弃未保存的更改？",
+      "keep": "继续编辑",
+      "discardAction": "放弃更改"
+    },
     "reconnectAccount": "需要验证账户身份。请在设置中重新连接相应的 Google 或 Microsoft 账户。",
     "connected": "已连接",
     "accountNumber": "Google 账号 {{number}}",

@@ -1,4 +1,5 @@
 """Microsoft account settings and shared workspace browser endpoints."""
+from services.mail_notes import MailNotesQuery, MailNoteRequest, read_notes, save_note
 import asyncio
 import base64
 import secrets
@@ -767,3 +768,13 @@ async def get_recipient_groups(account_id: str):
 async def put_recipient_groups(account_id: str, request: RecipientGroupsRequest):
     key = await auth.mail_settings_document_id(account_id, "recipient_groups")
     return await save_groups(key, request)
+
+
+@router.post("/accounts/{account_id}/mail/notes/lookup")
+async def lookup_mail_notes(account_id: str, request: MailNotesQuery):
+    return await read_notes(await auth.mail_settings_document_id(account_id, "signature"), request)
+
+
+@router.put("/accounts/{account_id}/mail/notes")
+async def put_mail_note(account_id: str, request: MailNoteRequest):
+    return await save_note(await auth.mail_settings_document_id(account_id, "signature"), request)

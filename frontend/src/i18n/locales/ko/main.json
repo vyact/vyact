@@ -123,6 +123,20 @@
     "close": "닫기"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "메일 메모",
+      "add": "메모 추가",
+      "view": "메모 보기",
+      "label": "메모",
+      "placeholder": "기억할 내용이나 링크를 남겨보세요.",
+      "updated": "수정: {{date}}",
+      "save": "저장",
+      "edit": "수정",
+      "close": "닫기",
+      "discard": "저장하지 않은 변경을 버릴까요?",
+      "keep": "계속 작성",
+      "discardAction": "변경 버리기"
+    },
     "reconnectAccount": "계정 인증이 필요합니다. 설정에서 해당 Google 또는 Microsoft 계정을 다시 연결해 주세요.",
     "connected": "연결됨",
     "accountNumber": "Google 계정 {{number}}",

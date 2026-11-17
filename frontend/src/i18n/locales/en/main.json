@@ -123,6 +123,20 @@
     "close": "Close"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Mail note",
+      "add": "Add note",
+      "view": "View note",
+      "label": "Note",
+      "placeholder": "Add a reminder or a useful link.",
+      "updated": "Updated: {{date}}",
+      "save": "Save",
+      "edit": "Edit",
+      "close": "Close",
+      "discard": "Discard unsaved changes?",
+      "keep": "Keep editing",
+      "discardAction": "Discard changes"
+    },
     "reconnectAccount": "Account authentication is required. Reconnect the affected Google or Microsoft account in Settings.",
     "connected": "Connected",
     "accountNumber": "Google account {{number}}",
