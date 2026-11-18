@@ -102,6 +102,16 @@ function normalizeBrowserUrl(rawUrl) {
     return `https://www.google.com/search?q=${encodeURIComponent(value)}`;
 }
 
+const COMMUNITY_GOOGLE_AUTH_URLS = new Map([
+    ["https://vyact.vyvow.com", "https://api.vyact.vyvow.com/api/auth/google"],
+    ...(DEV_RENDERER_URL ? [["http://localhost:5175", "http://localhost:5175/api/auth/google"]] : []),
+]);
+
+function isCommunityGoogleLogin({url, frameName, referrer}) {
+    if (frameName !== "vyact-google-login" || !referrer?.url) return false;
+    return COMMUNITY_GOOGLE_AUTH_URLS.get(new URL(referrer.url).origin) === url;
+}
+
 function getRendererUrl(query = "") {
     const baseUrl = DEV_RENDERER_URL || `http://localhost:${SERVER_PORT}`;
     return `${baseUrl}${query}`;
@@ -915,7 +925,15 @@ function createWindow() {
     });
 
     // target="_blank" 링크 → 시스템 브라우저로 열기
-    mainWindow.webContents.setWindowOpenHandler(({url}) => {
+    mainWindow.webContents.setWindowOpenHandler((details) => {
+        if (isCommunityGoogleLogin(details)) {
+            return {action: "allow", overrideBrowserWindowOptions: {
+                width: 500,
+                height: 700,
+                webPreferences: {nodeIntegration: false, contextIsolation: true, sandbox: true},
+            }};
+        }
+        const {url} = details;
         if (url.startsWith("http://") || url.startsWith("https://")) {
             require("electron").shell.openExternal(url);
         }

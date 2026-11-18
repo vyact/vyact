@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Camera} from 'lucide-react';
+import type {WorkspaceRightSidebarControl} from '../../contexts/WorkspaceSidebarContext';
 import {useTranslation} from 'react-i18next';
 import './TitleBar.css';
 import NotificationCenter from './NotificationCenter';
@@ -10,15 +11,26 @@ interface TitleBarProps {
     sidebarCollapsed: boolean;
     onToggleSidebar: () => void;
     onScreenshot: () => void;
+    rightSidebar?: WorkspaceRightSidebarControl | null;
     onSidebarHoverEnter?: () => void;
     onSidebarHoverLeave?: () => void;
     notificationCenterOpen: boolean;
     onNotificationCenterOpenChange: (open: boolean) => void;
 }
 
+function SidebarIcon({collapsed, side = 'left'}: {collapsed: boolean; side?: 'left' | 'right'}) {
+    const leftX = collapsed ? 7 : 9;
+    const x = side === 'right' ? 24 - leftX : leftX;
+    return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1={x} y1={collapsed ? 8 : 3} x2={x} y2={collapsed ? 16 : 21}/>
+    </svg>;
+}
+
 const isMac = navigator.platform.toUpperCase().includes('MAC');
 const SCREENSHOT_ASPECT_RATIOS = ['16:9', '4:3', '1:1'] as const;
-const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, onScreenshot, onSidebarHoverEnter, onSidebarHoverLeave, notificationCenterOpen, onNotificationCenterOpenChange}) => {
+const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, onScreenshot, rightSidebar, onSidebarHoverEnter, onSidebarHoverLeave, notificationCenterOpen, onNotificationCenterOpenChange}) => {
     const {t} = useTranslation('main');
     const [maximized, setMaximized] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -76,13 +88,7 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                     onMouseEnter={sidebarCollapsed ? onSidebarHoverEnter : undefined}
                     onMouseLeave={sidebarCollapsed ? onSidebarHoverLeave : undefined}
                 >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        {sidebarCollapsed
-                            ? <line x1="7" y1="8" x2="7" y2="16" />
-                            : <line x1="9" y1="3" x2="9" y2="21" />}
-                    </svg>
+                    <SidebarIcon collapsed={sidebarCollapsed}/>
                 </button>
             </div>
 
@@ -102,6 +108,12 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                     alignRight
                     ariaLabel={t('screenshot.aspectRatio')}
                 />}
+                {rightSidebar && <button type="button" className="titlebar-btn"
+                    onClick={rightSidebar.toggle}
+                    aria-label={t(`stockAnalysis.discussion.${rightSidebar.collapsed ? 'expand' : 'collapse'}`)}
+                    aria-expanded={!rightSidebar.collapsed}>
+                    <SidebarIcon side="right" collapsed={rightSidebar.collapsed}/>
+                </button>}
                 <button className="titlebar-btn" onClick={onScreenshot} aria-label={t('screenshot.captureCurrent')}>
                     <Camera size={15} />
                 </button>

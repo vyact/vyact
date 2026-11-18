@@ -1,11 +1,11 @@
-import {useRef, useCallback, useState, type CSSProperties, type ComponentProps} from 'react';
-import {ChevronLeft, ChevronRight} from 'lucide-react';
+import {useRef, useCallback, useContext, useEffect, useState, type CSSProperties, type ComponentProps} from 'react';
+import {WorkspaceRightSidebarContext} from '../../contexts/WorkspaceSidebarContext';
 import {useTranslation} from 'react-i18next';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
 import useStockAnalysisShortcut from './useStockAnalysisShortcut';
 import StockDiscussionSidebar from './StockDiscussionSidebar';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
-import StockCommunityChat from './StockCommunityChat';
+import CommunityChat from '../common/CommunityChat/CommunityChat';
 import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
@@ -30,16 +30,22 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
     const previewWidth = useCallback((width: number) => {
         panel.current?.style.setProperty('--stock-discussion-width', `${width}px`);
     }, []);
-    const updateLayout = (next: typeof layout) => {
+    const updateLayout = useCallback((next: typeof layout) => {
         setLayout(next);
         try {localStorage.setItem(STORAGE_KEY, JSON.stringify(next));} catch { /* Optional layout preference. */ }
-    };
+    }, []);
     const clampWidth = (width: number) => {
         const bounds = panel.current?.closest('.stock-analysis-inner')?.getBoundingClientRect();
         const maximum = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, bounds ? bounds.width - MIN_CONTENT_WIDTH : MAX_WIDTH));
         return Math.max(MIN_WIDTH, Math.min(maximum, width));
     };
-    useStockAnalysisShortcut('I', () => updateLayout({...layout, collapsed: !layout.collapsed}));
+    const toggle = useCallback(() => updateLayout({...layout, collapsed: !layout.collapsed}), [layout, updateLayout]);
+    const registerRightSidebar = useContext(WorkspaceRightSidebarContext);
+    useEffect(() => {
+        registerRightSidebar({collapsed: layout.collapsed, toggle});
+        return () => registerRightSidebar(null);
+    }, [registerRightSidebar, layout.collapsed, toggle]);
+    useStockAnalysisShortcut('I', toggle);
     return <div ref={panel} className={`stock-discussion-container${layout.collapsed ? ' is-collapsed' : ''}`}
         style={{'--stock-discussion-width': `${layout.width}px`} as CSSProperties}>
         {!layout.collapsed && <PanelResizer className="stock-discussion-resizer" onWidthChange={previewWidth}
@@ -48,25 +54,21 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
                 if (width !== undefined) updateLayout({...layout, width});
                 panel.current?.classList.remove('is-resizing');
             }}
-            doubleClickHint={layout.width === DEFAULT_WIDTH ? t('panelResizer.expandDouble') : undefined}
+            hideHint
             getWidth={event => {
                 const bounds = panel.current!.closest('.stock-analysis-inner')!.getBoundingClientRect();
                 return clampWidth(bounds.right - event.clientX);
             }} onReset={() => updateLayout({...layout,
                 width: clampWidth(layout.width === DEFAULT_WIDTH ? DEFAULT_WIDTH * 2 : DEFAULT_WIDTH),
             })}/>}
-        <button type="button" className="stock-discussion-toggle" aria-expanded={!layout.collapsed}
-            aria-label={t(`stockAnalysis.discussion.${layout.collapsed ? 'expand' : 'collapse'}`)}
-            onClick={() => updateLayout({...layout, collapsed: !layout.collapsed})}>
-            {layout.collapsed ? <ChevronLeft size={17} aria-hidden="true"/> : <ChevronRight size={17} aria-hidden="true"/>}
-        </button>
         <div className="stock-discussion-body" inert={layout.collapsed} aria-hidden={layout.collapsed}>
-            <div className="stock-community-tabs"><ModalTabs activeKey={activeTab} onChange={tab => {setActiveTab(tab); if (tab === 'chat') setChatLoaded(true);}}
+            <div className="stock-community-tabs" data-tooltip-disabled><ModalTabs activeKey={activeTab} onChange={tab => {setActiveTab(tab); if (tab === 'chat') setChatLoaded(true);}}
                 tabs={[{key: 'ai', label: t('stockAnalysis.discussion.ai')}, {key: 'chat', label: t('stockAnalysis.community.chat')}]}/></div>
             <div className="stock-community-tab-content" hidden={activeTab !== 'ai'}>
             <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {setActiveTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
             </div>
-            {chatLoaded && <div className="stock-community-tab-content" hidden={activeTab !== 'chat'}><StockCommunityChat/></div>}
+            {chatLoaded && <div className="stock-community-tab-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
+                title={t('stockAnalysis.community.chat')} unavailableMessage={t('stockAnalysis.community.unavailable')}/></div>}
         </div>
     </div>;
 }

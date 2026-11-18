@@ -403,7 +403,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <StockNews key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol}/>
             </div>}
         </main>
-        {!active && listView !== 'groups' && <StockGroupDiscussionPanel key={`sectors:${market}:${i18n.resolvedLanguage}`} scopeType="sector" market={market} directory={symbols}
+        {!active && listView !== 'groups' && <StockGroupDiscussionPanel key={`sectors:${market}`} scopeType="sector" market={market} directory={symbols}
             weights={Object.fromEntries(marketSectors.flatMap(sector => sector.stocks.map(stock => [stock.symbol, stock.weight])))}
             groups={marketSectors.map(sector => ({id: sector.name, market,
                 name: t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})}),

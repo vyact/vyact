@@ -1,4 +1,4 @@
-import {WorkspaceSidebarContext, type WorkspaceSidebarControl} from '../../contexts/WorkspaceSidebarContext';
+import {WorkspaceRightSidebarContext, WorkspaceSidebarContext, type WorkspaceRightSidebarControl, type WorkspaceSidebarControl} from '../../contexts/WorkspaceSidebarContext';
 import MainWorkspace from './MainWorkspace';
 import {DocumentPreviewProvider} from '../../contexts/DocumentPreviewContext';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
@@ -237,6 +237,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const {t} = useTranslation('main');
     // ── UI 상태 ──────────────────────────────────────────────────────
     const [workspaceSidebar, setWorkspaceSidebar] = useState<WorkspaceSidebarControl | null>(null);
+    const [workspaceRightSidebar, setWorkspaceRightSidebar] = useState<WorkspaceRightSidebarControl | null>(null);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(getStoredSidebarCollapsed);
     const [sidebarHover, setSidebarHover] = useState(false);
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -688,6 +689,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     return (
         <PanelManagerProvider>
             <WorkspaceSidebarContext.Provider value={setWorkspaceSidebar}>
+            <WorkspaceRightSidebarContext.Provider value={setWorkspaceRightSidebar}>
             <PluginProviders>
             <DocumentPreviewProvider><CodePanelProvider>
                 <PluginPanelCoordinator/>
@@ -696,6 +698,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         sidebarCollapsed={workspaceSidebar?.collapsed ?? sidebarCollapsed}
                         onToggleSidebar={workspaceSidebar?.toggle ?? toggleSidebar}
                         onScreenshot={handleScreenshot}
+                        rightSidebar={workspaceRightSidebar}
                         onSidebarHoverEnter={workspaceSidebar?.onHoverEnter ?? handleSidebarHoverEnter}
                         onSidebarHoverLeave={workspaceSidebar?.onHoverLeave ?? handleSidebarHoverLeave}
                         notificationCenterOpen={notificationCenterOpen}
@@ -1166,6 +1169,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                 </div>
             </CodePanelProvider></DocumentPreviewProvider>
             </PluginProviders>
+            </WorkspaceRightSidebarContext.Provider>
         </WorkspaceSidebarContext.Provider>
         </PanelManagerProvider>
     );

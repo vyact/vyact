@@ -9,3 +9,10 @@ export interface WorkspaceSidebarControl {
 }
 
 export const WorkspaceSidebarContext = createContext<(control: WorkspaceSidebarControl | null) => void>(() => {});
+
+export interface WorkspaceRightSidebarControl {
+    collapsed: boolean;
+    toggle: () => void;
+}
+
+export const WorkspaceRightSidebarContext = createContext<(control: WorkspaceRightSidebarControl | null) => void>(() => {});
