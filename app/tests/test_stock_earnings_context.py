@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from services.stock_analysis import financial_context
-from services.stock_analysis.earnings_context import build_earnings_context, missing_earnings_periods
+from services.stock_analysis.earnings_context import build_earnings_context, missing_earnings_periods, supplement_financial_statements
 from services.stock_analysis.api_settings import RESPONSE_ADAPTERS, ApiEndpoint, build_api_request
 
 
@@ -14,6 +14,26 @@ def earnings(period='2026-09-30', frequency='quarterly'):
             'source': 'DART', 'currency': 'KRW', 'preliminary': True,
             'receiptDate': '2026-10-29', 'originLink': 'https://dart.fss.or.kr/',
             'values': {'revenue': 100, 'netIncomeParent': -10}}
+
+
+@pytest.mark.asyncio
+async def test_statement_supplement_preserves_yahoo_and_frequency_without_mutation():
+    yahoo = {'currency': 'KRW', 'statements': {'income': [
+        {'period': '2026-06-30', 'values': {'revenue': 0}}], 'balance': [], 'cashflow': []}}
+    rows = [earnings('2026-06-30'), earnings(), earnings('2025-12-31', 'yearly')]
+    with patch('services.stock_analysis.earnings_context.custom_data', new=AsyncMock(return_value=rows)):
+        result = await supplement_financial_statements('005930', 'quarterly', yahoo)
+    assert [row['period'] for row in result['statements']['income']] == ['2026-09-30', '2026-06-30']
+    assert result['statements']['income'][0]['source'] == 'DART'
+    assert result['statements']['income'][1]['values']['revenue'] == 0
+    assert len(yahoo['statements']['income']) == 1
+
+
+@pytest.mark.asyncio
+async def test_statement_supplement_failure_keeps_yahoo():
+    yahoo = {'currency': 'KRW', 'statements': {'income': [], 'balance': [], 'cashflow': []}}
+    with patch('services.stock_analysis.earnings_context.custom_data', new=AsyncMock(side_effect=RuntimeError())):
+        assert await supplement_financial_statements('005930', 'quarterly', yahoo) is yahoo
 
 
 def test_missing_periods_keep_annual_and_quarterly_distinct_and_deduplicate():

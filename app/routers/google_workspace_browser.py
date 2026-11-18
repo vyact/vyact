@@ -1,4 +1,5 @@
 """Google Workspace browser APIs used by the chat input side panel."""
+from services.mail_notes import MailNotesQuery, MailNoteRequest, read_notes, save_note
 from services.shutdown_guard import atomic_write_bytes
 import asyncio
 import base64
@@ -1974,3 +1975,13 @@ async def get_recipient_groups(account_id: str):
 async def put_recipient_groups(account_id: str, request: RecipientGroupsRequest):
     key = (await _mail_signature_document_id(account_id)).replace('google_mail_signature:', 'google_recipient_groups:')
     return await save_groups(key, request)
+
+
+@router.post("/google-workspace/accounts/{account_id}/mail/notes/lookup")
+async def lookup_mail_notes(account_id: str, request: MailNotesQuery):
+    return await read_notes(await _mail_signature_document_id(account_id), request)
+
+
+@router.put("/google-workspace/accounts/{account_id}/mail/notes")
+async def put_mail_note(account_id: str, request: MailNoteRequest):
+    return await save_note(await _mail_signature_document_id(account_id), request)

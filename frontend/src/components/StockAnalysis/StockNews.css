@@ -10,4 +10,7 @@
 .stock-news-meta {display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; color: var(--text-muted); font-size: 12px;}
 .stock-news li > p {margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere;}
 .stock-news-note {margin: 0; color: var(--text-muted); font-size: 12px;}
+.stock-news-empty {display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 200px; padding: 32px 20px; text-align: center; color: var(--text-muted);}
+.stock-news-empty-icon {display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 64px; height: 64px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface2);}
+.stock-news-empty p {margin: 0; max-width: 360px; color: var(--text-secondary); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere;}
 .stock-news-error {display: flex; align-items: center; gap: 12px;}

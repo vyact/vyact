@@ -2,6 +2,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from typing import Literal
 
 from pydantic import BaseModel
 from yfinance.exceptions import YFRateLimitError
@@ -23,10 +24,11 @@ _scheduler = None
 
 class FinancialCollectionSettings(BaseModel):
     autoUpdate: bool = False
+    intervalWeeks: Literal[1, 2, 3, 4] = 1
 
 
 async def collection_status(market):
-    settings = await read_document(f'settings:{market}') or {'autoUpdate': False}
+    settings = FinancialCollectionSettings(**(await read_document(f'settings:{market}') or {})).model_dump()
     job = await read_document(f'job:{market}') or {'status': 'idle', 'total': 0, 'processed': 0, 'failed': 0, 'empty': 0}
     return {'settings': settings, 'job': {key: value for key, value in job.items() if key not in ('symbols', 'failedSymbols')}}
 
@@ -125,7 +127,7 @@ async def run_scheduled_collections():
                 await start_collection(market, resume=True)
             elif status['settings'].get('autoUpdate') and job['status'] != 'paused':
                 started = job.get('lastFullStartedAt')
-                if not started or utc_now() - datetime.fromisoformat(started) >= WEEK:
+                if not started or utc_now() - datetime.fromisoformat(started) >= WEEK * status['settings']['intervalWeeks']:
                     await start_collection(market)
         except Exception:
             logger.warning('Financial collection scheduler unavailable for %s', market)

@@ -186,3 +186,18 @@ class FinancialCollectionTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(collection, 'start_collection', new_callable=AsyncMock) as start:
             await collection.run_scheduled_collections()
         start.assert_awaited_once_with('KR')
+
+    async def test_schedule_uses_saved_interval_and_settings_round_trip(self):
+        await collection.save_settings('KR', collection.FinancialCollectionSettings(autoUpdate=True, intervalWeeks=4))
+        self.assertEqual((await collection.collection_status('KR'))['settings'], {'autoUpdate': True, 'intervalWeeks': 4})
+        self.docs['job:KR'] = {'status': 'completed', 'lastFullStartedAt': (store.utc_now() - timedelta(days=27)).isoformat()}
+        with patch.object(collection, 'start_collection', new_callable=AsyncMock) as start:
+            await collection.run_scheduled_collections()
+            start.assert_not_awaited()
+            self.docs['job:KR']['lastFullStartedAt'] = (store.utc_now() - timedelta(days=28)).isoformat()
+            await collection.run_scheduled_collections()
+            start.assert_awaited_once_with('KR')
+
+    async def test_legacy_settings_default_to_one_week(self):
+        self.docs['settings:KR'] = {'autoUpdate': True}
+        self.assertEqual((await collection.collection_status('KR'))['settings']['intervalWeeks'], 1)

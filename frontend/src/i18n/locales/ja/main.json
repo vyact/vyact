@@ -123,6 +123,20 @@
     "close": "閉じる"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "メールメモ",
+      "add": "メモを追加",
+      "view": "メモを表示",
+      "label": "メモ",
+      "placeholder": "覚えておきたい内容やリンクを残しましょう。",
+      "updated": "更新: {{date}}",
+      "save": "保存",
+      "edit": "編集",
+      "close": "閉じる",
+      "discard": "未保存の変更を破棄しますか？",
+      "keep": "編集を続ける",
+      "discardAction": "変更を破棄"
+    },
     "reconnectAccount": "アカウントの認証が必要です。設定で該当する Google または Microsoft アカウントを再接続してください。",
     "connected": "接続済み",
     "accountNumber": "Google アカウント {{number}}",
@@ -1881,7 +1895,7 @@
     },
     "news": {
       "tab": "ニュース",
-      "empty": "この銘柄のニュースはありません。",
+      "empty": "関連ニュースはありません。",
       "error": "ニュースを取得できませんでした。もう一度お試しください。",
       "source": "出典: Yahoo Finance · ニュース・プレスリリース"
     },
@@ -1904,7 +1918,8 @@
     "premarketRegularOpensIn": "プレマーケット · 通常取引開始まで {{time}}",
     "preferencesSyncFailed": "グループ・お気に入りの同期に失敗 · 再試行",
     "indexNasdaq100": "ナスダック100",
-    "shortcuts": {"sortPreview": "押しながら銘柄プレビューを騰落率順に並べ替え"},
+    "shortcuts": {
+      "back": "一覧に戻る","sortPreview": "押しながら銘柄プレビューを騰落率順に並べ替え"},
     "pinnedIndices": {"limitHint": "指数は最大{{count}}個まで固定できます", "syncFailed": "設定の同期に失敗 · 再試行", "label": "固定した指数", "remove": "{{name}}の固定を解除", "dropHint": "ここにドロップして指数を固定"},
     "TW": "台湾株式市場",
     "HK": "香港株式市場",
@@ -1940,7 +1955,9 @@
     },
     "collection": {
       "title": "財務情報の収集",
-      "auto": "毎週自動更新",
+      "auto": "自動更新",
+      "interval": "更新間隔",
+      "weeks": "{{count}}週間",
       "hintScope": "この市場の全銘柄の年次・四半期財務情報を収集します。",
       "hintResume": "アプリ起動中に収集し、再起動後も続行します。",
       "hintPause": "一時停止中は自動更新も再開するまで停止します。",

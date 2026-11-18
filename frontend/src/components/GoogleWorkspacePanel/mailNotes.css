@@ -1,0 +1,55 @@
+.gwp-mail-row-meta { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding-bottom: 12px; }
+.gwp-note-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: 6px; color: var(--info); background: transparent; cursor: pointer; transition: color .15s, background .15s; }
+.gwp-mail-row .gwp-note-trigger { margin-top: auto; display: grid; place-items: center; box-sizing: border-box; width: 30px; height: 30px; min-height: 30px; padding: 0; gap: 0; color: var(--info); opacity: 0; }
+.gwp-mail-row .gwp-note-trigger > svg { display: block; margin: 0; flex-shrink: 0; }
+.gwp-mail-row:hover .gwp-note-trigger, .gwp-mail-row:focus-within .gwp-note-trigger, .gwp-mail-row .gwp-note-trigger.has-note { opacity: 1; }
+.gwp-note-trigger.has-note { color: var(--info); background: transparent; }
+.gwp-note-trigger:hover:not(:disabled) { color: var(--info); background: color-mix(in srgb, var(--info) 14%, transparent); }
+.gwp-note-trigger:disabled { opacity: .35; cursor: wait; }
+.gwp-note-overlay { padding: 24px; }
+.gwp-note-modal { width: min(560px, 100%); max-height: min(720px, 85vh); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: 0 24px 80px #0005; }
+.gwp-note-modal header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px; border-bottom: 1px solid var(--border); }
+.gwp-note-heading { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.gwp-note-heading > svg { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.gwp-note-heading > div { min-width: 0; }
+.gwp-note-heading h3 { margin: 0 0 7px; font-size: 17px; font-weight: 600; }
+.gwp-note-heading p { margin: 0; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-note-body { padding: 24px; overflow: auto; min-height: 190px; }
+.gwp-note-body label { display: block; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+.gwp-note-body textarea { display: block; box-sizing: border-box; width: 100%; min-height: 240px; resize: vertical; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; line-height: 1.8; }
+.gwp-note-body textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
+.gwp-note-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.85; font-size: 14px; user-select: text; }
+.gwp-note-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.gwp-note-modal footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-top: 1px solid var(--border); }
+.gwp-note-modal footer small { color: var(--muted); font-size: 12px; }
+@media (hover: none) { .gwp-mail-row .gwp-note-trigger { opacity: 1; } }
+
+.gwp-note-trigger.has-note::after { content: ''; position: absolute; top: 4px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--info); box-shadow: 0 0 0 2px var(--surface); }
+.gwp-note-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.gwp-note-actions > button { min-height: 36px; justify-content: center; cursor: pointer; }
+
+.gwp-mail-row .gwp-note-trigger, .gwp-detail-actions .gwp-note-trigger { background: transparent; border: 0; box-shadow: none; }
+.gwp-detail-actions .gwp-note-trigger:hover:not(:disabled) { background: color-mix(in srgb, var(--info) 14%, transparent); }
+
+.gwp-detail-actions .gwp-note-trigger > svg { width: 16px; height: 16px; }
+
+.gwp-detail-actions > .gwp-note-trigger { width: 36px; height: 34px; padding: 0; justify-content: center; flex-shrink: 0; }
+.gwp-detail-actions > .gwp-note-trigger > svg { flex-shrink: 0; }
+
+
+
+.gwp-detail-icon-group { display: flex; align-items: center; gap: 0; }
+.gwp-detail-icon-group > button, .gwp-detail-icon-group .knowledge-collection-attach-trigger { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 28px; min-width: 28px; height: 32px; padding: 0; margin: 0; border-radius: 7px; }
+.gwp-detail-icon-group > .gwp-note-trigger { background: transparent; border: 0; box-shadow: none; }
+.gwp-detail-icon-group > .gwp-note-trigger:hover:not(:disabled) { background: color-mix(in srgb, var(--info) 14%, transparent); }
+.gwp-detail-icon-group > .gwp-note-trigger > svg { flex-shrink: 0; }
+
+.gwp-mail-row .gwp-note-trigger:hover:not(:disabled),
+.gwp-mail-row .gwp-note-trigger:focus-visible {
+    color: var(--info);
+    background: color-mix(in srgb, var(--info) 14%, transparent);
+}
+.gwp-mail-row .gwp-note-trigger:hover:not(:disabled)::after,
+.gwp-mail-row .gwp-note-trigger:focus-visible::after {
+    background: currentColor;
+}

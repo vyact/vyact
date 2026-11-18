@@ -3,12 +3,14 @@ import {Pause, Play, RefreshCw, ChevronDown, CircleAlert} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
+import CustomSelect from '../CustomSelect/CustomSelect';
 import {financialCollectionRequest, type FinancialCollectionStatus} from '../../services/stockFinancialCollection';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import StockMarketFlag from './StockMarketFlag';
 import './StockFinancialCollection.css';
 
 const STATUS_POLL_MS = 4000;
+const COLLECTION_INTERVAL_WEEKS = [1, 2, 3, 4] as const;
 interface CollectionProps {market: StockMarket; directory: StockSymbol[]}
 
 export default function StockFinancialCollection({market, directory}: CollectionProps) {
@@ -32,9 +34,9 @@ function CollectionControl({market, directory}: CollectionProps) {
         void poll();
         return () => {controller.abort(); clearTimeout(timer);};
     }, [market]);
-    const update = async (action?: 'start' | 'pause' | 'resume' | 'retry', auto?: boolean) => {
+    const update = async (action?: 'start' | 'pause' | 'resume' | 'retry', auto?: boolean, intervalWeeks = status?.settings.intervalWeeks ?? 1) => {
         setBusy(true); setError(false);
-        try {setStatus(await financialCollectionRequest(market, action, auto));}
+        try {setStatus(await financialCollectionRequest(market, action, auto, undefined, intervalWeeks));}
         catch {setError(true);} finally {setBusy(false);}
     };
     const job = status?.job;
@@ -58,6 +60,11 @@ function CollectionControl({market, directory}: CollectionProps) {
                 <strong className="stock-collection-menu-title"><StockMarketFlag market={market}/>{t(`stockAnalysis.${market}`)} · {tr('title')}</strong>
                 <div className="stock-collection-auto"><span>{tr('auto')}</span><ToggleSwitch checked={status?.settings.autoUpdate ?? false}
                     disabled={busy || !status} label={tr('auto')} onChange={checked => void update(undefined, checked)}/></div>
+                <div className="stock-collection-auto"><span>{tr('interval')}</span><CustomSelect
+                    value={String(status?.settings.intervalWeeks ?? 1)} disabled={busy || !status}
+                    options={COLLECTION_INTERVAL_WEEKS.map(weeks => ({value: String(weeks), label: t('stockAnalysis.collection.weeks', {count: weeks})}))}
+                    ariaLabel={tr('interval')} alignRight
+                    onChange={value => void update(undefined, status?.settings.autoUpdate ?? false, Number(value))}/></div>
                 <ul className="stock-collection-guide">{['hintScope', 'hintResume', 'hintPause'].map(key => <li key={key}>{tr(key)}</li>)}</ul>
                 {job && <div className="stock-collection-status" data-state={job.status} data-tooltip-disabled="">
                     <div className="stock-collection-status-heading" role="status"><span>{tr(job.status)}</span><div className="stock-collection-progress-summary"><span className="stock-collection-processed">{number(job.processed)} / {number(job.total)}</span><span className="stock-collection-percent" aria-label={tr('progress')}>{progressPercent}</span></div></div>

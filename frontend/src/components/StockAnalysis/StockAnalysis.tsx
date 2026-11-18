@@ -1,9 +1,10 @@
-import {isGlobalIndicator} from '../../utils/stockSymbols';
+import {isGlobalIndicator, supportsStockFinancials} from '../../utils/stockSymbols';
 import GlobalMarketIndicators from './GlobalMarketIndicators';
 import PinnedIndexBar from './PinnedIndexBar';
 import StockExternalLinks from './StockExternalLinks';
 import {withMarketIndices} from './stockDirectory';
 import useStockMarketShortcuts from './useStockMarketShortcuts';
+import useStockBackShortcut from './useStockBackShortcut';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
 import {WorkspaceSidebarContext} from '../../contexts/WorkspaceSidebarContext';
@@ -131,6 +132,14 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const [priceError, setPriceError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [refreshVersion, setRefreshVersion] = useState(0);
+    const returnToOverview = useCallback(() => {
+        setActive(null);
+        setRows(null);
+        setLoading(false);
+        setPriceError(false);
+        setRefreshVersion(0);
+    }, []);
+    useStockBackShortcut(!!active, returnToOverview);
     const [chartRefreshSeconds, setChartRefreshSeconds] = useState(readChartRefreshSeconds);
     const changeChartRefreshSeconds = (seconds: number) => {
         setChartRefreshSeconds(seconds);
@@ -139,6 +148,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const chartVisible = detailTab === 'chart';
     const activeSymbol = active?.symbol;
     const globalIndicator = !!activeSymbol && isGlobalIndicator(activeSymbol);
+    const supportsFinancials = !!activeSymbol && supportsStockFinancials(activeSymbol);
     const instrumentMarket = globalIndicator ? 'US' : market;
     const directory = withMarketIndices(market, symbols, tr);
     const watchlistCount = directory.filter(item => watchlist.contains(market, item.symbol)).length;
@@ -353,13 +363,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
                 : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
-                <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
-                    setActive(null);
-                    setRows(null);
-                    setLoading(false);
-                    setPriceError(false);
-                    setRefreshVersion(0);
-                }}><ArrowLeft size={16} aria-hidden="true"/></button>
+                <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} aria-keyshortcuts="Meta+ArrowLeft" onClick={returnToOverview}><ArrowLeft size={16} aria-hidden="true"/></button>
                     <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p>
                     <StockExternalLinks market={market} symbol={active.symbol}/></div>
                 <div className="stock-analysis-header-actions">
@@ -373,7 +377,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 </div>
             </div>}
             {active && <div className="stock-analysis-detail-tabs"><ModalTabs
-                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, ...(!globalIndicator ? [{key: 'financials' as const, label: tr('financials.tab')}] : []), {key: 'news', label: tr('news.tab')}]}
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, ...(supportsFinancials ? [{key: 'financials' as const, label: tr('financials.tab')}] : []), {key: 'news', label: tr('news.tab')}]}
                 activeKey={detailTab} onChange={setDetailTab}/></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
             <div className="stock-analysis-chart-stage" aria-busy={loading}>
@@ -392,7 +396,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
                 {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={instrumentMarket}/>}
             </div>}
-            {active && !globalIndicator && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
+            {active && supportsFinancials && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
             {active && detailTab === 'news' && <div className="stock-analysis-detail-panel">

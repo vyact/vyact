@@ -3,6 +3,18 @@ import {financialChange, formatFinancialAmount} from './stockFinancials';
 import type {FinancialPeriod} from '../services/stockFinancials';
 
 describe('financial formatting and comparisons', () => {
+    it('compares supplemental periods whenever the matching metric is available', () => {
+        const periods: FinancialPeriod[] = [
+            {period: '2026-09-30', source: 'DART', values: {revenue: 150}},
+            {period: '2026-06-30', values: {revenue: 120, eps: 10}},
+            {period: '2025-09-30', values: {revenue: 100}},
+            {period: '2025-06-30', source: 'DART', values: {revenue: 80}},
+        ];
+        expect(financialChange(periods, periods[0], 'revenue', 'qoq', 'quarterly')).toBe(25);
+        expect(financialChange(periods, periods[0], 'revenue', 'yoy', 'quarterly')).toBe(50);
+        expect(financialChange(periods, periods[1], 'revenue', 'yoy', 'quarterly')).toBe(50);
+        expect(financialChange(periods, periods[0], 'eps', 'qoq', 'quarterly')).toBeNull();
+    });
     it('uses Korean hundred millions while keeping EPS unscaled', () => {
         expect(formatFinancialAmount(171499470000000, 'revenue', 'ko', '억')).toBe('1,714,994.7억');
         expect(formatFinancialAmount(10733, 'eps', 'ko', '억')).toBe('10,733');

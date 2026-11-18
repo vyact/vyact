@@ -123,6 +123,20 @@
     "close": "Close"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Mail note",
+      "add": "Add note",
+      "view": "View note",
+      "label": "Note",
+      "placeholder": "Add a reminder or a useful link.",
+      "updated": "Updated: {{date}}",
+      "save": "Save",
+      "edit": "Edit",
+      "close": "Close",
+      "discard": "Discard unsaved changes?",
+      "keep": "Keep editing",
+      "discardAction": "Discard changes"
+    },
     "reconnectAccount": "Account authentication is required. Reconnect the affected Google or Microsoft account in Settings.",
     "connected": "Connected",
     "accountNumber": "Google account {{number}}",
@@ -1882,7 +1896,7 @@
     },
     "news": {
       "tab": "News",
-      "empty": "No news is available for this symbol.",
+      "empty": "No related news is available.",
       "error": "Unable to load news. Please try again.",
       "source": "Source: Yahoo Finance · News and press releases"
     },
@@ -1905,7 +1919,8 @@
     "premarketRegularOpensIn": "Premarket · Regular open in {{time}}",
     "preferencesSyncFailed": "Groups or watchlist sync failed · Retry",
     "indexNasdaq100": "Nasdaq 100",
-    "shortcuts": {"sortPreview": "Hold to sort preview stocks by percentage change"},
+    "shortcuts": {
+      "back": "Back to overview","sortPreview": "Hold to sort preview stocks by percentage change"},
     "pinnedIndices": {"limitHint": "You can pin up to {{count}} indices", "syncFailed": "Settings sync failed · Retry", "label": "Pinned indices", "remove": "Unpin {{name}}", "dropHint": "Drop here to pin an index"},
     "TW": "Taiwan stocks",
     "HK": "Hong Kong stocks",
@@ -1941,7 +1956,10 @@
     },
     "collection": {
       "title": "Financial collection",
-      "auto": "Automatic weekly update",
+      "auto": "Automatic updates",
+      "interval": "Update interval",
+      "weeks_one": "{{count}} week",
+      "weeks_other": "{{count}} weeks",
       "hintScope": "Collect annual and quarterly financials for all stocks in this market.",
       "hintResume": "Collection runs while the app is open and resumes after restart.",
       "hintPause": "Pausing also suspends automatic updates until you resume.",

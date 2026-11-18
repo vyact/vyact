@@ -1,4 +1,4 @@
-import {GLOBAL_INDICATOR_SYMBOLS, GLOBAL_INDICATOR_KEYS, isGlobalIndicator} from '../../utils/stockSymbols';
+import {GLOBAL_INDICATOR_SYMBOLS, GLOBAL_INDICATOR_KEYS, supportsStockFinancials} from '../../utils/stockSymbols';
 import {getReasoningRequestValue} from '../../utils/reasoning';
 import StockContextPeriod from './StockContextPeriod';
 import {normalizeContextRange, type StockContextRange} from './stockContextRange';
@@ -55,7 +55,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
-    const supportsFinancials = !isGlobalIndicator(stock.symbol);
+    const supportsFinancials = supportsStockFinancials(stock.symbol);
     const contextRange = preferences.periodMode === 'range' ? preferences.lastRange : null;
     const setContextRange = useCallback((range: StockContextRange) => setPreferences(current => ({
         ...current, periodMode: range ? 'range' : 'recent', lastRange: range ?? current.lastRange,

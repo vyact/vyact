@@ -975,6 +975,12 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         return response.json();
     },
     async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/${workspace}/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
+    async getMailNotes(id: string, ids: string[]): Promise<{notes: Record<string, {content: string; updated_at: string}>}> {
+        return fetchJson(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(id)}/mail/notes/lookup`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ids})});
+    },
+    async saveMailNote(accountId: string, id: string, content: string): Promise<{content: string; updated_at: string}> {
+        return fetchJson(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/notes`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, content})});
+    },
     async getMailRecipientGroups(id: string): Promise<{groups: Array<{id: string; name: string; emails: string[]}>}> {
         return fetchJson(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(id)}/mail/recipient-groups`);
     },

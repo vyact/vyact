@@ -123,6 +123,20 @@
     "close": "Fermer"
   },
   "googleWorkspace": {
+    "mailNote": {
+      "title": "Note du message",
+      "add": "Ajouter une note",
+      "view": "Voir la note",
+      "label": "Note",
+      "placeholder": "Ajoutez un rappel ou un lien utile.",
+      "updated": "Modifiée : {{date}}",
+      "save": "Enregistrer",
+      "edit": "Modifier",
+      "close": "Fermer",
+      "discard": "Ignorer les modifications non enregistrées ?",
+      "keep": "Continuer à modifier",
+      "discardAction": "Ignorer les modifications"
+    },
     "reconnectAccount": "Une authentification est nécessaire. Reconnectez le compte Google ou Microsoft concerné dans les paramètres.",
     "connected": "Connecté",
     "accountNumber": "Compte Google {{number}}",
@@ -1883,7 +1897,7 @@
     },
     "news": {
       "tab": "Actualités",
-      "empty": "Aucune actualité pour ce titre.",
+      "empty": "Aucune actualité associée disponible.",
       "error": "Impossible de charger les actualités. Veuillez réessayer.",
       "source": "Source : Yahoo Finance · Actualités et communiqués de presse"
     },
@@ -1906,7 +1920,8 @@
     "premarketRegularOpensIn": "Préouverture · Séance normale dans {{time}}",
     "preferencesSyncFailed": "Échec de synchronisation des groupes ou favoris · Réessayer",
     "indexNasdaq100": "Nasdaq 100",
-    "shortcuts": {"sortPreview": "Maintenir pour trier les aperçus par variation en pourcentage"},
+    "shortcuts": {
+      "back": "Retour à la liste","sortPreview": "Maintenir pour trier les aperçus par variation en pourcentage"},
     "pinnedIndices": {"limitHint": "Vous pouvez épingler jusqu’à {{count}} indices", "syncFailed": "Échec de synchronisation · Réessayer", "label": "Indices épinglés", "remove": "Détacher {{name}}", "dropHint": "Déposer ici pour épingler un indice"},
     "TW": "Actions de Taïwan",
     "HK": "Actions de Hong Kong",
@@ -1942,7 +1957,10 @@
     },
     "collection": {
       "title": "Collecte financière",
-      "auto": "Mise à jour automatique hebdomadaire",
+      "auto": "Mise à jour automatique",
+      "interval": "Intervalle de mise à jour",
+      "weeks_one": "{{count}} semaine",
+      "weeks_other": "{{count}} semaines",
       "hintScope": "Collecte les états annuels et trimestriels de toutes les actions du marché.",
       "hintResume": "La collecte fonctionne lorsque l’application est ouverte et reprend après redémarrage.",
       "hintPause": "La pause suspend aussi les mises à jour automatiques jusqu’à la reprise.",

@@ -140,7 +140,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     useEffect(() => {
         const handler = (e: PointerEvent) => {
             const target = e.target as Node;
-            const isActionMenuInteraction = target instanceof Element && Boolean(target.closest('.action-menu-content'));
+            const actionMenu = target instanceof Element ? target.closest('.action-menu-content') : null;
+            // Preserve portaled child menus (e.g. model actions), but not the menu containing this select.
+            const isActionMenuInteraction = actionMenu && wrapRef.current && !actionMenu.contains(wrapRef.current);
             if (wrapRef.current && !wrapRef.current.contains(target) && !dropdownRef.current?.contains(target) && !isActionMenuInteraction) {
                 setOpen(false);
                 setSearch('');

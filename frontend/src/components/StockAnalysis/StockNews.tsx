@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Newspaper} from 'lucide-react';
 import {getStockNews, type StockNewsArticle} from '../../services/stockNews';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import './StockNews.css';
@@ -22,7 +23,10 @@ export default function StockNews({symbol}: {symbol: string}) {
         <div className="stock-analysis-chart-stage stock-news-body">
         {!articles && !error && <StockLoadingIndicator title={tr('tab')} iconOnly/>}
         {error && <div className="stock-news-error"><p role="alert">{tr('error')}</p><button type="button" className="modal-action-cancel" onClick={() => {setError(false); setArticles(null); setRetry(value => value + 1);}}>{t('stockAnalysis.retry')}</button></div>}
-        {articles?.length === 0 && <p className="stock-news-note">{tr('empty')}</p>}
+        {articles?.length === 0 && <div className="stock-news-empty" role="status">
+            <span className="stock-news-empty-icon"><Newspaper size={28} strokeWidth={1.5} aria-hidden="true"/></span>
+            <p>{tr('empty')}</p>
+        </div>}
         {!!articles?.length && <ul>{articles.map(article => {
             const timestamp = article.publishedAt ? new Date(article.publishedAt) : null;
             return <li key={article.url}><a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
