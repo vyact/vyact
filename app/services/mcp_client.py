@@ -21,6 +21,7 @@ from contextlib import AsyncExitStack
 from typing import Any
 
 from logger import DebugLogSettings, get_logger
+from services.keenable_tools import compact_keenable_tool
 from services.microsoft_workspace.auth import status as microsoft_auth_status
 from services.web_search_credits import web_search_available
 from services.tool_lifecycle import ToolExecution, ToolLifecycle, run_tool_execution
@@ -483,11 +484,14 @@ class MCPManager:
                 continue
             for t in srv.tools:
                 schema = getattr(t, "inputSchema", None) or {"type": "object", "properties": {}}
+                description = t.description or ""
+                if worker.cfg.get("_server_type") == "keenable":
+                    description, schema = compact_keenable_tool(t.name, description, schema)
                 out.append({
                     "type": "function",
                     "function": {
                         "name": f"{srv.name}{_SEP}{t.name}",
-                        "description": t.description or "",
+                        "description": description,
                         "parameters": schema,
                     },
                 })

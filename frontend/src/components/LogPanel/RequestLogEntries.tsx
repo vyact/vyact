@@ -45,7 +45,11 @@ function JsonFields({value, depth = 1}: {value: unknown; depth?: number}) {
             <span className="request-log-key">{key}</span>
             {depth < MAX_TREE_DEPTH && child !== null && typeof child === 'object'
                 ? <JsonFields value={child} depth={depth + 1}/>
-                : <span className="request-log-value">{key === 'timestamp' ? timestampText(child) : valueText(child)}</span>}
+                : <span className="request-log-value">{
+                    key === 'timestamp' ? timestampText(child)
+                        : key === 'model_requests' && Array.isArray(child) ? JSON.stringify(child, null, 2)
+                            : valueText(child)
+                }</span>}
         </div>)}
     </div>;
 }

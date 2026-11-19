@@ -5,7 +5,7 @@ from services.llm.tool_trace import tool_trace, record_tool_event, record_tool_c
 def test_disabled_trace_is_noop():
     token = tool_trace.set(None)
     try:
-        record_tool_context("openai", {"messages": [{"role": "tool", "content": "private"}]})
+        record_tool_context("openai", {"tools": [{"type": "function"}]})
         record_tool_event({"phase": "end", "result": "private"})
         assert tool_trace.get() is None
     finally:
@@ -26,6 +26,28 @@ def test_outgoing_context_snapshot_is_exact_and_not_mutated(provider, body):
         assert trace["model_requests"][0]["provider"] == provider
         body.clear()
         assert "model-visible result" in str(trace)
+    finally:
+        tool_trace.reset(token)
+
+
+def test_outgoing_tool_definitions_are_logged_without_tool_calls():
+    trace = {"executions": [], "model_requests": []}
+    token = tool_trace.set(trace)
+    try:
+        function = {"name": "search", "description": "Search the web with Bearer private-token",
+                    "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}}
+        record_tool_context("openai", {
+            "messages": [{"role": "user", "content": "Hi"}],
+            "tools": [{"type": "function", "function": function}],
+        })
+        function["parameters"]["properties"].clear()
+        assert trace["model_requests"] == [{
+            "provider": "openai",
+            "tools": [{"type": "function", "function": {
+                "name": "search", "description": "Search the web with Bearer [REDACTED]",
+                "parameters": {"type": "object", "properties": {"query": {"type": "string"}}},
+            }}],
+        }]
     finally:
         tool_trace.reset(token)
 
