@@ -58,5 +58,11 @@ def record_tool_context(provider: str, body: dict):
             if selected:
                 messages.append({"role": message.get("role"),
                                  "parts" if "parts" in message else "content": selected})
-    if messages:
-        trace["model_requests"].append({"provider": provider, "messages": redact(messages)})
+    tools = body.get("tools")
+    if tools or messages:
+        entry = {"provider": provider}
+        if tools:
+            entry["tools"] = redact(tools)
+        if messages:
+            entry["messages"] = redact(messages)
+        trace["model_requests"].append(entry)
