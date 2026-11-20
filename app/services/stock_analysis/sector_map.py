@@ -113,13 +113,16 @@ def _premarket_quote(quote: dict, window: tuple[float, float], now: float, regul
         return None
     if not (window[0] <= stamp < window[1] and stamp <= now + 60) or price <= 0 or regular_price <= 0:
         return None
-    # The denominator must be the latest completed regular session, never an older close.
+    # Keep the premarket quote paired with the displayed regular close.
     regular_stamp = quote.get('regularMarketTime')
     if not isinstance(regular_stamp, (int, float)) or not math.isfinite(regular_stamp) or regular_stamp >= window[0]:
         return None
     if quote.get('regularMarketPrice') != regular_price:
         return None
-    return {'price': price, 'change': (price / regular_price - 1) * 100,
+    change = quote.get('preMarketChangePercent')
+    if not isinstance(change, (int, float)) or isinstance(change, bool) or not math.isfinite(change):
+        change = None
+    return {'price': price, 'change': change,
             'quoteTime': datetime.fromtimestamp(stamp, timezone.utc).isoformat()}
 
 

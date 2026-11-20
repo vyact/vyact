@@ -34,14 +34,14 @@ class StockGroupQuotesTests(unittest.TestCase):
     def test_premarket_group_quotes_keep_close_and_mark_missing_quotes_neutral(self):
         def fetch(symbols, *, details):
             details['AAPL'] = {'regularMarketPrice': 100, 'regularMarketTime': 900,
-                               'preMarketPrice': 103, 'preMarketTime': 1500}
+                               'preMarketPrice': 103, 'preMarketTime': 1500, 'preMarketChangePercent': 2.8}
             return {'AAPL': ('2026-11-10', 100, -2, 300), 'MSFT': ('2026-11-10', 200, -4, 100)}
 
         with patch.object(sector_map, '_us_quotes', side_effect=fetch), \
                 patch.object(sector_map, 'time', return_value=1600), \
                 patch.object(sector_map, 'us_premarket_window', return_value=(1000, 2000)):
             quotes = sector_map.get_stock_quotes(['AAPL', 'MSFT'])
-        self.assertAlmostEqual(quotes[0]['change'], 3)
+        self.assertEqual(quotes[0]['change'], 2.8)
         self.assertEqual(quotes[0]['price'], 103)
         self.assertEqual(quotes[0]['regularPrice'], 100)
         self.assertEqual(quotes[0]['regularChange'], -2)

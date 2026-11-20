@@ -81,12 +81,18 @@ class StockSectorMapTests(unittest.TestCase):
         self.assertEqual(result['sectors'][0]['name'], 'Technology')
         self.assertEqual(result['sectors'][0]['stocks'][0]['price'], 188700)
 
-    def test_premarket_uses_regular_close_and_rejects_old_or_invalid_quotes(self):
+    def test_premarket_uses_provider_change_and_rejects_old_or_invalid_quotes(self):
         window = (1000, 2000)
         raw = {'preMarketPrice': 179.38, 'preMarketTime': 1500, 'regularMarketPrice': 178.67, 'regularMarketTime': 900}
-        result = sector_map._premarket_quote(raw, window, 1600, 178.67)
-        self.assertAlmostEqual(result['change'], (179.38 / 178.67 - 1) * 100)
+        result = sector_map._premarket_quote({**raw, 'preMarketChangePercent': -5.38}, window, 1600, 178.67)
+        self.assertEqual(result['change'], -5.38)
         self.assertEqual(result['price'], 179.38)
+        self.assertIsNone(sector_map._premarket_quote(raw, window, 1600, 178.67)['change'])
+        for value, expected in ((0, 0), (True, None), (float('nan'), None), ('1.2', None)):
+            with self.subTest(change=value):
+                result = sector_map._premarket_quote({**raw, 'preMarketChangePercent': value}, window, 1600, 178.67)
+                self.assertEqual(result['change'], expected)
+                self.assertEqual(result['price'], 179.38)
         for invalid in ({'preMarketTime': 999}, {'preMarketTime': 2000}, {'preMarketTime': 1700},
                         {'preMarketPrice': float('nan')}, {'preMarketPrice': 0}, {'preMarketTime': True},
                         {'regularMarketPrice': 170}, {'regularMarketTime': 1100}):
@@ -104,7 +110,8 @@ class StockSectorMapTests(unittest.TestCase):
         client = Mock()
         client.get.return_value = response
         def fetch(symbols, *, details=None):
-            details['NVDA'] = {'regularMarketPrice': 178.67, 'regularMarketTime': 900, 'preMarketPrice': 179.38, 'preMarketTime': 1500}
+            details['NVDA'] = {'regularMarketPrice': 178.67, 'regularMarketTime': 900, 'preMarketPrice': 179.38,
+                               'preMarketTime': 1500, 'preMarketChangePercent': 0.42}
             return {'NVDA': ('2026-11-09', 178.67, -4.27, 2000), 'AAPL': ('2026-11-09', 350.69, 2.43, 1000)}
         quotes.side_effect = fetch
         with patch.object(sector_map, 'us_premarket_window', return_value=(1000, 2000)), patch.object(sector_map, 'time', return_value=1600):
@@ -112,7 +119,7 @@ class StockSectorMapTests(unittest.TestCase):
         self.assertEqual(result['session'], 'premarket')
         self.assertEqual(result['quoteDate'], '2026-11-09')
         nvda, apple = result['sectors'][0]['stocks']
-        self.assertAlmostEqual(nvda['change'], 0.3973806469748644)
+        self.assertEqual(nvda['change'], 0.42)
         self.assertEqual(nvda['regularChange'], -4.27)
         self.assertEqual(nvda['regularPrice'], 178.67)
         self.assertIsNone(apple['price'])
