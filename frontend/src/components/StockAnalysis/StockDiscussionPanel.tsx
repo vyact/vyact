@@ -6,6 +6,8 @@ import useStockAnalysisShortcut from './useStockAnalysisShortcut';
 import StockDiscussionSidebar from './StockDiscussionSidebar';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import CommunityChat from '../common/CommunityChat/CommunityChat';
+import StockChatPicker from './StockChatPicker';
+import StockLoadingIndicator from './StockLoadingIndicator';
 import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
@@ -67,7 +69,10 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
             <div className="stock-community-tab-content" hidden={activeTab !== 'ai'}>
             <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {setActiveTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
             </div>
-            {chatLoaded && <div className="stock-community-tab-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
+            {chatLoaded && <div className="stock-community-tab-content stock-community-chat-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
+                stockPicker={(enabled, onScopeChange, accountMenu) => <StockChatPicker localMarket={props.market} directory={props.directory}
+                    enabled={enabled} onScopeChange={onScopeChange} accountMenu={accountMenu}/>}
+                loadingIndicator={<StockLoadingIndicator title={t('stockAnalysis.community.chat')} iconOnly/>}
                 title={t('stockAnalysis.community.chat')} unavailableMessage={t('stockAnalysis.community.unavailable')}/></div>}
         </div>
     </div>;

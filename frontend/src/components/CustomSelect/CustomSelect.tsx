@@ -200,6 +200,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     }, [open, filtered.length, portal]);
 
     const handleSelect = (optValue: string) => {
+        if (disabled) return;
         onChange(optValue);
         if (closeOnSelect) {
             setOpen(false);
@@ -213,7 +214,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     };
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
-        if (event.nativeEvent.isComposing) return;
+        if (disabled || event.nativeEvent.isComposing) return;
         if (!open) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault(); event.stopPropagation();
@@ -347,6 +348,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 aria-controls={open ? listId : undefined}
                 className={`custom-select-trigger${open ? ' open' : ''}${showClearButton ? ' has-clear' : ''}`}
                 aria-label={ariaLabel}
+                aria-disabled={disabled || undefined}
                 onClick={event => {
                     event.stopPropagation();
                     if (!disabled) setOpen(current => {

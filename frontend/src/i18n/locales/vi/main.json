@@ -1846,7 +1846,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
-    "community": {"chat": "Trò chuyện", "unavailable": "Kết nối cộng đồng chưa được cấu hình."},
+    "community": {"stockRoom": "Tìm tên hoặc mã chứng khoán", "allMarkets": "Tất cả thị trường", "selectMarketFirst": "Chọn thị trường trước", "chat": "Trò chuyện", "unavailable": "Kết nối cộng đồng chưa được cấu hình."},
     "globalIndicators": {
       "treasury": "Lợi suất Mỹ 10 năm",
       "title": "Thị trường toàn cầu",

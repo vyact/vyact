@@ -5,3 +5,18 @@
 .stock-community-tab-content[hidden] {display: none;}
 .stock-community-tab-content > .stock-discussion {width: 100%; min-width: 0; border-inline-start: 0;}
 .stock-discussion-container.is-resizing .community-chat-frame {pointer-events: none;}
+.stock-community-chat-content {flex-direction: column;}
+.stock-community-picker {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(95px, 2fr) minmax(0, 3fr) auto;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+}
+.stock-community-picker .custom-select-wrap {min-width: 0;}
+.stock-community-picker .custom-select-trigger {min-height: 34px;}
+.stock-community-picker-retry {grid-column: 2; justify-self: start;}

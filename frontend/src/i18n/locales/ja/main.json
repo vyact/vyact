@@ -1846,7 +1846,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
-    "community": {"chat": "チャット", "unavailable": "コミュニティ接続はまだ設定されていません。"},
+    "community": {"stockRoom": "銘柄名・ティッカーで検索", "allMarkets": "すべての市場", "selectMarketFirst": "先に市場を選択", "chat": "チャット", "unavailable": "コミュニティ接続はまだ設定されていません。"},
     "globalIndicators": {
       "treasury": "米国10年債利回り",
       "title": "グローバル市場指標",
