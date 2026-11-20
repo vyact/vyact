@@ -42,11 +42,10 @@
 .stock-discussion-period input {transition: border-color .15s;}
 .stock-discussion-period input:hover:not(:disabled) {border-bottom-color: var(--muted);}
 .stock-discussion-period input:focus {outline: none; border-bottom-color: var(--accent);}
-.stock-discussion-title {display: flex; align-items: center; gap: 8px; padding: 17px 16px; color: var(--accent); border-bottom: 1px solid var(--border);}
-.stock-discussion-title h2 {font-size: 13px; font-weight: 650;}
 .stock-discussion-references {display: grid; gap: 8px; padding: 12px 14px;}
 .stock-discussion-references > .custom-select-wrap {width: 100%; min-width: 0;}
-.stock-discussion-references .custom-select-trigger {font-size: 12px; min-height: 32px;}
+.stock-discussion-references .custom-select-trigger,
+.stock-discussion-header .custom-select-trigger {font-size: 12px; min-height: 32px;}
 .stock-discussion-references > p {font-size: 11px; line-height: 1.5;}
 .stock-discussion-references ul {display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none;}
 .stock-discussion-references li {display: flex; align-items: center; gap: 5px; min-width: 0; padding: 5px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 11px;}
@@ -105,14 +104,14 @@
 .stock-discussion-attach-icon {position: relative; display: inline-flex;}
 .stock-discussion-attach-plus {position: absolute; top: -3px; inset-inline-end: -4px;}
 
-.stock-discussion-header {position: relative; padding: 16px 16px 8px;}
-.stock-discussion-header .stock-discussion-title {padding-block: 0; padding-inline: 0 112px; border: 0; gap: 7px;}
-.stock-discussion-header .stock-discussion-title h2 {font-size: 12px; font-weight: 600; color: var(--muted);}
-.stock-discussion-header .stock-discussion-instrument {padding: 12px 0 0; border: 0; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 8px;}
-.stock-discussion-header .stock-discussion-instrument strong {font-size: 14px; font-weight: 600;}
-.stock-discussion-header .stock-discussion-instrument .stock-symbol-label {font-size: 10px;}
-.stock-discussion-header-actions {position: absolute; top: 10px; inset-inline-end: 48px; display: flex; align-items: center; gap: 6px;}
-.stock-discussion-header-action {display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--muted); cursor: pointer;}
+.stock-discussion-header {display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 16px 8px;}
+.stock-discussion-header > .stock-group-sampling {grid-column: 1 / -1;}
+.stock-discussion-header > .custom-select-wrap {min-width: 0;}
+.stock-discussion-header .stock-discussion-instrument {min-width: 0; padding: 0; border: 0; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 8px;}
+.stock-discussion-header .stock-discussion-instrument strong {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600;}
+.stock-discussion-header .stock-discussion-instrument .stock-symbol-label {flex-shrink: 0; font-size: 10px;}
+.stock-discussion-header-actions {justify-self: end; display: flex; align-items: center; gap: 6px;}
+.stock-discussion-header-action {display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--muted); cursor: pointer;}
 .stock-discussion-header-action:hover:not(:disabled) {color: var(--accent); border-color: var(--border); background: var(--surface2);}
 .stock-discussion-header-action:disabled {opacity: .4; cursor: default;}
 .stock-discussion-header-action:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}

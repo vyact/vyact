@@ -6,7 +6,7 @@ import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {useCallback, useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
-import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark, MessageSquareText} from 'lucide-react';
+import {ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark, MessageSquareText} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockSavedQuestionsDialog from './StockSavedQuestionsDialog';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
@@ -51,7 +51,7 @@ function readPreferences(): {days: number; toolIds: string[] | undefined; includ
     } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false, periodMode: 'recent', lastRange: null};}
 }
 
-export default function StockDiscussionSidebar({stock, priceRows = [], groups, scopeType = 'group', groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; priceRows?: DailyPrice[]; scopeType?: 'group' | 'sector'; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, priceRows = [], groups, scopeType = 'group', groupPicker, groupSampling, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; priceRows?: DailyPrice[]; scopeType?: 'group' | 'sector'; groups?: StockGroup[]; groupPicker?: ReactNode; groupSampling?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
@@ -283,15 +283,14 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
         }}>
         {draggingFiles && <div className="stock-discussion-file-drop-hint" role="status">{t('pdfModal.dropFiles')}</div>}
         <header className="stock-discussion-header">
-            <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
+            {groups ? groupPicker : <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span className="stock-symbol-label">{stock.symbol}</span></div>}
             <div className="stock-discussion-header-actions">
                 <button type="button" className="stock-discussion-header-action" aria-label={tr('historyTitle')} data-tooltip-disabled="" disabled={busy}
                     onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
-            <button type="button" className="stock-discussion-header-action" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
+                <button type="button" className="stock-discussion-header-action" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
             </div>
-            {!groups && <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span className="stock-symbol-label">{stock.symbol}</span></div>}
+            {groupSampling}
         </header>
-        {groupPicker}
         {!groups && <section className="stock-discussion-references" aria-label={tr('references')}>
             <div className="stock-discussion-reference-picker">
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>

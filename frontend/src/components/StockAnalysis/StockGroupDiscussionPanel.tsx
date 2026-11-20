@@ -43,14 +43,13 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
     const symbol = `MARKET-${market}`;
     return <StockDiscussionPanel market={market} directory={directory}
         stock={{symbol, name}} groups={contextGroups} scopeType={scopeType}
-        groupPicker={<section className="stock-discussion-references">
-            <CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t(`stockAnalysis.discussion.${scopeType === 'sector' ? 'selectSector' : 'selectGroup'}`)}
+        groupPicker={<CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t(`stockAnalysis.discussion.${scopeType === 'sector' ? 'selectSector' : 'selectGroup'}`)}
                 searchable options={options}
                 renderTrigger={(_label, open) => <>{renderLabel(name, scopeCount)}
                     <ChevronDown size={14} className={`stock-group-select-chevron${open ? ' is-open' : ''}`} aria-hidden="true"/></>}
                 renderOption={option => renderLabel(option.label, option.description ?? '')}
-                onChange={toggleGroup} portal/>
-            {sampling && <div className="stock-group-sampling">
+                onChange={toggleGroup} portal/>}
+        groupSampling={sampling && <div className="stock-group-sampling">
                 <div className="stock-group-sampling-label">
                     <span>{t(`stockAnalysis.groups.${scopeType === 'sector' ? 'topPerSector' : 'topPerGroup'}`)}</span></div>
                     <CustomSelect value={String(sampleSize)} ariaLabel={t(`stockAnalysis.groups.${scopeType === 'sector' ? 'topPerSector' : 'topPerGroup'}`)}
@@ -60,6 +59,5 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
                             setSampleSize(next);
                             try { localStorage.setItem(sampleKey, String(next)); } catch { /* Optional preference. */ }
                         }}/>
-            </div>}
-        </section>}/>;
+            </div>}/>;
 }
