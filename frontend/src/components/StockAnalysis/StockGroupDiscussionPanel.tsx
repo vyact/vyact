@@ -14,17 +14,20 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
     const {t} = useTranslation('main');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const sampleKey = `vyact:stock-analysis:${scopeType}-sample:${market}`;
-    const [sampleSize, setSampleSize] = useState(() => {
+    const [sampleSize, setSampleSize] = useState<number | 'all'>(() => {
         try {
-            const saved = Number(localStorage.getItem(sampleKey));
-            return GROUP_SAMPLE_SIZES.some(size => size === saved) ? saved : DEFAULT_GROUP_SAMPLE_SIZE;
+            const saved = localStorage.getItem(sampleKey);
+            if (saved === 'all') return saved;
+            const size = Number(saved);
+            return GROUP_SAMPLE_SIZES.some(option => option === size) ? size : DEFAULT_GROUP_SAMPLE_SIZE;
         } catch { return DEFAULT_GROUP_SAMPLE_SIZE; }
     });
     const selectedGroups = groups.filter(group => selectedIds.includes(group.id));
     const allSelected = selectedGroups.length === 0;
     const scopeGroups = allSelected ? groups : selectedGroups;
-    const sampling = allSelected && weights !== undefined;
-    const contextGroups = sampling ? sampleGroupStocks(scopeGroups, weights, sampleSize) : scopeGroups;
+    const contextGroups = weights !== undefined && sampleSize !== 'all'
+        ? sampleGroupStocks(scopeGroups, weights, sampleSize) : scopeGroups;
+    const samplingLabel = t(`stockAnalysis.groups.${scopeType === 'sector' ? 'topPerSector' : 'topPerGroup'}`);
     const groupCountLabel = (count: number) => t('stockAnalysis.groups.groupCount', {count});
     const allCountLabel = `${groupCountLabel(groups.length)} · ${t('stockAnalysis.groups.stocks', {count: new Set(groups.flatMap(group => group.symbols)).size})}`;
     const name = allSelected ? t('stockAnalysis.groups.all') : selectedGroups.map(group => group.name).join(', ');
@@ -49,15 +52,16 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
                     <ChevronDown size={14} className={`stock-group-select-chevron${open ? ' is-open' : ''}`} aria-hidden="true"/></>}
                 renderOption={option => renderLabel(option.label, option.description ?? '')}
                 onChange={toggleGroup} portal/>}
-        groupSampling={sampling && <div className="stock-group-sampling">
-                <div className="stock-group-sampling-label">
-                    <span>{t(`stockAnalysis.groups.${scopeType === 'sector' ? 'topPerSector' : 'topPerGroup'}`)}</span></div>
-                    <CustomSelect value={String(sampleSize)} ariaLabel={t(`stockAnalysis.groups.${scopeType === 'sector' ? 'topPerSector' : 'topPerGroup'}`)}
-                        options={GROUP_SAMPLE_SIZES.map(count => ({value: String(count), label: t('stockAnalysis.groups.stocks', {count})}))}
-                        onChange={value => {
-                            const next = Number(value);
-                            setSampleSize(next);
-                            try { localStorage.setItem(sampleKey, String(next)); } catch { /* Optional preference. */ }
-                        }}/>
-            </div>}/>;
+        groupSampling={weights !== undefined && <div className="stock-group-sampling">
+            <span className="stock-group-sampling-label">{samplingLabel}</span>
+            <CustomSelect value={String(sampleSize)} ariaLabel={samplingLabel} alignRight
+                options={[
+                    {value: 'all', label: t('stockAnalysis.allStocks')},
+                    ...GROUP_SAMPLE_SIZES.map(count => ({value: String(count), label: t('stockAnalysis.groups.stocks', {count})})),
+                ]}
+                onChange={value => {
+                    setSampleSize(value === 'all' ? value : Number(value));
+                    try { localStorage.setItem(sampleKey, value); } catch { /* Optional preference. */ }
+                }}/>
+        </div>}/>;
 }

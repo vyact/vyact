@@ -2023,8 +2023,8 @@
     },
     "groups": {
       "groupCount": "{{count}} groups",
-      "topPerSector": "Top stocks per sector",
-      "topPerGroup": "Top stocks per group",
+      "topPerSector": "Top stocks by market cap per sector",
+      "topPerGroup": "Top stocks by market cap per group",
       "sampleSummary": "By weight · {{count}} stocks sent",
 
       "deleteDescription": "Deleting the group also removes all stock memberships in this group.",

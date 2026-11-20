@@ -2023,8 +2023,8 @@
     },
     "groups": {
       "groupCount": "{{count}} grupos",
-      "topPerSector": "Acciones por sector",
-      "topPerGroup": "Acciones por grupo",
+      "topPerSector": "Acciones de mayor capitalización por sector",
+      "topPerGroup": "Acciones de mayor capitalización por grupo",
       "sampleSummary": "Por peso · {{count}} acciones enviadas",
 
       "deleteDescription": "Al eliminar el grupo también se quitan todas las acciones incluidas en él.",

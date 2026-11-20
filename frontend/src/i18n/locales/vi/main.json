@@ -2021,8 +2021,8 @@
     },
     "groups": {
       "groupCount": "{{count}} nhóm",
-      "topPerSector": "Số cổ phiếu mỗi ngành",
-      "topPerGroup": "Số cổ phiếu mỗi nhóm",
+      "topPerSector": "Số cổ phiếu vốn hóa cao nhất mỗi ngành",
+      "topPerGroup": "Số cổ phiếu vốn hóa cao nhất mỗi nhóm",
       "sampleSummary": "Theo trọng số · gửi {{count}} cổ phiếu",
 
       "deleteDescription": "Xóa nhóm cũng sẽ xóa toàn bộ danh sách cổ phiếu trong nhóm.",

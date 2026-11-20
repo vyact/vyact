@@ -2031,8 +2031,8 @@
     },
     "groups": {
       "groupCount": "그룹 {{count}}개",
-      "topPerSector": "섹터별 상위 종목 수",
-      "topPerGroup": "그룹별 상위 종목 수",
+      "topPerSector": "섹터별 시총 상위 종목 수",
+      "topPerGroup": "그룹별 시총 상위 종목 수",
       "sampleSummary": "weight 기준 · 총 {{count}}개 종목 전달",
 
       "deleteDescription": "그룹을 삭제하면 그룹에 포함된 종목 목록도 모두 제거됩니다.",

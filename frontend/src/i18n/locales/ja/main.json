@@ -2021,8 +2021,8 @@
     },
     "groups": {
       "groupCount": "{{count}}グループ",
-      "topPerSector": "セクター別上位銘柄数",
-      "topPerGroup": "グループ別上位銘柄数",
+      "topPerSector": "セクター別の時価総額上位銘柄数",
+      "topPerGroup": "グループ別の時価総額上位銘柄数",
       "sampleSummary": "ウェイト順 · {{count}}銘柄を送信",
 
       "deleteDescription": "グループを削除すると、このグループの登録銘柄もすべて解除されます。",

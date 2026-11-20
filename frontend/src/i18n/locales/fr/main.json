@@ -2024,8 +2024,8 @@
     },
     "groups": {
       "groupCount": "{{count}} groupes",
-      "topPerSector": "Titres par secteur",
-      "topPerGroup": "Titres par groupe",
+      "topPerSector": "Titres les plus capitalisés par secteur",
+      "topPerGroup": "Titres les plus capitalisés par groupe",
       "sampleSummary": "Par poids · {{count}} actions transmises",
 
       "deleteDescription": "La suppression du groupe retire aussi toutes les actions de ce groupe.",

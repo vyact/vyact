@@ -2021,8 +2021,8 @@
     },
     "groups": {
       "groupCount": "{{count}}个分组",
-      "topPerSector": "每板块头部股票数",
-      "topPerGroup": "每组头部股票数",
+      "topPerSector": "每个板块按市值排名的头部股票数",
+      "topPerGroup": "每组按市值排名的头部股票数",
       "sampleSummary": "按权重 · 发送{{count}}只股票",
 
       "deleteDescription": "删除分组时，该分组内的所有股票成员记录也会移除。",
