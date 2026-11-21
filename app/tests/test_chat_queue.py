@@ -105,3 +105,25 @@ async def test_extension_translation_rejects_busy_chat(monkeypatch, headers, sav
         assert error.value.detail == {'code': 'ai_busy'}
         assert lock.locked()
         llm.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_community_translation_uses_an_isolated_prompt(monkeypatch):
+    monkeypatch.setattr(chat, 'chat_request_lock', asyncio.Lock())
+    llm = AsyncMock(return_value=' 안녕 ')
+    monkeypatch.setattr(chat, 'query_llm', llm)
+    request = AsyncMock()
+    request.is_disconnected.return_value = False
+
+    result = await chat.translate_community_message(
+        chat.CommunityTranslateRequest(text='Hello', target_lang='Korean'), request
+    )
+
+    assert result == {'translated': '안녕'}
+    llm.assert_awaited_once()
+    args, kwargs = llm.await_args
+    assert args == ('Translate to Korean. Output only the translation.\n\nHello', [], '', [], [])
+    assert kwargs['isolated_system_prompt']
+    assert kwargs['raise_on_error']
+    for option in ('use_tools', 'inject_user_profile', 'include_skills', 'include_response_language', 'reasoning'):
+        assert kwargs[option] is False

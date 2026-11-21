@@ -354,6 +354,8 @@ async def query_llm(
         structured_output_schema: dict | None = None,
         include_response_language: bool = True,
         sources_out: list | None = None,
+        isolated_system_prompt: bool = False,
+        raise_on_error: bool = False,
 ) -> str:
     """논스트리밍 단발 응답 (모든 provider).
 
@@ -401,6 +403,7 @@ async def query_llm(
         question, context_docs, system_prompt, attachments,
         conversation_history, format_instruction_override, inject_user_profile,
         provider_type, model, conversation_summary, include_skills,
+        isolated_system_prompt=isolated_system_prompt,
         include_response_language=include_response_language,
         reasoning=reasoning,
         use_tools=use_tools,
@@ -442,6 +445,8 @@ async def query_llm(
                     log_entry["response"] = text
                     return text
                 except httpx.HTTPStatusError as e:
+                    if raise_on_error:
+                        raise
                     return openai_err(e, log_entry, await get_tool_language())
 
             elif provider_type == "gemini":
@@ -457,7 +462,7 @@ async def query_llm(
                     log_llm_call(call_reason, "gemini", model, streaming=False, reasoning=reasoning)
                     resp = await client.post(
                         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
-                        json={"systemInstruction": {"parts": [{"text": system_message}]},
+                        json={**({"systemInstruction": {"parts": [{"text": system_message}]}} if system_message else {}),
                               "contents": [*history_for_gemini(history_messages, valid_slice),
                                            {"role": "user", "parts": parts}],
                               "generationConfig": {"temperature": temperature}})
@@ -466,6 +471,8 @@ async def query_llm(
                     log_entry["response"] = result
                     return result["candidates"][0]["content"]["parts"][0]["text"]
                 except httpx.HTTPStatusError as e:
+                    if raise_on_error:
+                        raise
                     return gemini_err(e, log_entry, await get_tool_language())
 
             elif provider_type == "claude":
@@ -486,7 +493,7 @@ async def query_llm(
                         "https://api.anthropic.com/v1/messages",
                         headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
                         json={"model": model, "max_tokens": max_tokens, "temperature": temperature,
-                              "system": system_message,
+                              **({"system": system_message} if system_message else {}),
                               "messages": [*history_for_claude(history_messages, valid_slice),
                                            {"role": "user", "content": blocks}]})
                     resp.raise_for_status()
@@ -497,9 +504,13 @@ async def query_llm(
                         text = "\n".join(text.split("\n")[1:-1])
                     return text
                 except httpx.HTTPStatusError as e:
+                    if raise_on_error:
+                        raise
                     return claude_err(e, log_entry, await get_tool_language())
 
             else:
+                if raise_on_error:
+                    raise ValueError(f"Unsupported provider: {provider_type}")
                 return llm_message("unsupported_provider", await get_tool_language(), provider=provider_type)
 
         except Exception as e:
@@ -509,6 +520,8 @@ async def query_llm(
             logger.error("[ERROR] 예상치 못한 에러: %s: %s", type(e).__name__, e)
             logger.error(err_detail)
             await log_llm_interaction(log_entry)
+            if raise_on_error:
+                raise
             return "❌ " + llm_message("request_failed", await get_tool_language(), detail=f"{type(e).__name__}: {e}")
         finally:
             if not log_entry.get("error"):

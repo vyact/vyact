@@ -81,11 +81,11 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             translating = true;
             try {
                 const target = new Intl.DisplayNames(['en'], {type: 'language'}).of(language) ?? language;
-                const response = await fetch('/api/translate', {
+                const response = await fetch('/api/community/translate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     signal: AbortSignal.any([translationSession.signal, AbortSignal.timeout(TRANSLATION_TIMEOUT_MS)]),
-                    body: JSON.stringify({text, target_lang: target, include_response_language: false, save_history: false}),
+                    body: JSON.stringify({text, target_lang: target}),
                 });
                 if (!response.ok) {
                     reply({error: response.status === 409 ? 'busy' : 'failed'});

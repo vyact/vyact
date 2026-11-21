@@ -16,7 +16,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse
 import json
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent import (
     rag_query, save_conversation, create_conversation_stub,
@@ -1462,6 +1462,42 @@ class TranslateRequest(BaseModel):
     save_history: bool = False
     conv_id: str = ""
     history_label: str = ""  # 히스토리에 표시할 user 메시지 (없으면 자동 생성)
+
+
+class CommunityTranslateRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=2000, pattern=r"\S")
+    target_lang: str = Field(min_length=1, max_length=100, pattern=r"\S")
+
+
+@router.post("/community/translate")
+async def translate_community_message(req: CommunityTranslateRequest, request: Request):
+    if chat_request_lock.locked():
+        raise HTTPException(status_code=409, detail={"code": "ai_busy"})
+
+    async def translate_when_available():
+        if chat_request_lock.locked():
+            raise HTTPException(status_code=409, detail={"code": "ai_busy"})
+        async with chat_request_lock:
+            return await query_llm(
+                f"Translate to {req.target_lang}. Output only the translation.\n\n{req.text}",
+                [], "", [], [],
+                timeout=300.0,
+                format_instruction_override="",
+                inject_user_profile=False,
+                use_tools=False,
+                num_predict=1024,
+                reasoning=False,
+                call_reason="community_translate",
+                include_skills=False,
+                isolated_system_prompt=True,
+                include_response_language=False,
+                raise_on_error=True,
+            )
+
+    translated = (await await_while_connected(request, translate_when_available())).strip()
+    if not translated:
+        raise HTTPException(status_code=502, detail={"code": "translation_failed"})
+    return {"translated": translated}
 
 
 # 익스텐션의 extractVocabFromAnswer()와 동일한 정제 로직.

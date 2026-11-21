@@ -437,8 +437,10 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     if names:
         sys_content = final_system_message(system_message + await build_tool_directive(names))
 
-    messages = [{"role": "system", "content": sys_content},
-                *history_for_openai(history_messages, valid_slice), user_msg]
+    messages = history_for_openai(history_messages, valid_slice)
+    if sys_content or unified:
+        messages.insert(0, {"role": "system", "content": sys_content})
+    messages.append(user_msg)
     user_message_index = len(messages) - 1
 
     headers = build_provider_headers(await get_provider_config())
