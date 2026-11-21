@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
+import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
 import './CommunityChat.css';
 import CommunityAvatarMenu from './CommunityAvatarMenu';
 import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../../services/stockAnalysis';
@@ -8,6 +9,7 @@ const FRAME_READY_TIMEOUT_MS = 15_000;
 const SHORTCUT_MESSAGE = 'vyact:community-shortcut';
 const MAX_COMMUNITY_MESSAGE_LENGTH = 2000;
 const TRANSLATION_TIMEOUT_MS = 310_000;
+const TRANSLATION_LANGUAGES = new Set(SUPPORTED_LANGUAGES.map(({value}) => value));
 const SHIFT_SHORTCUT_KEYS = [STOCK_ANALYSIS_SHORTCUT_KEY, 'A', 'B', 'D', 'G', 'J', 'L', 'M', 'N'];
 const COMMUNITY_SHORTCUTS = new Map([
     ...SHIFT_SHORTCUT_KEYS.map(key => [`Shift+Key${key}`, key] as const),
@@ -68,10 +70,10 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const origin = new URL(COMMUNITY_URL).origin;
         const translationSession = new AbortController();
         let translating = false;
-        const translateMessage = async (frame: HTMLIFrameElement, requestId: string, text: string) => {
+        const translateMessage = async (frame: HTMLIFrameElement, requestId: string, text: string, targetLanguage: string) => {
             const reply = (result: {translation?: string; error?: 'busy' | 'failed'}) => {
                 if (!translationSession.signal.aborted) {
-                    frame.contentWindow?.postMessage({type: 'vyact:community-translation-result', requestId, language, ...result}, origin);
+                    frame.contentWindow?.postMessage({type: 'vyact:community-translation-result', requestId, language: targetLanguage, ...result}, origin);
                 }
             };
             if (translating) {
@@ -80,7 +82,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             }
             translating = true;
             try {
-                const target = new Intl.DisplayNames(['en'], {type: 'language'}).of(language) ?? language;
+                const target = new Intl.DisplayNames(['en'], {type: 'language'}).of(targetLanguage) ?? targetLanguage;
                 const response = await fetch('/api/community/translate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -124,10 +126,13 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-translate-message') {
-                const {requestId, text} = event.data;
+                const {requestId, text, targetLanguage} = event.data;
                 if (typeof requestId === 'string' && /^[\da-f-]{36}$/i.test(requestId)
                     && typeof text === 'string' && text.length <= MAX_COMMUNITY_MESSAGE_LENGTH && text.trim()) {
-                    void translateMessage(frame, requestId, text);
+                    const target = targetLanguage ?? language;
+                    if (typeof target === 'string' && TRANSLATION_LANGUAGES.has(target)) {
+                        void translateMessage(frame, requestId, text, target);
+                    }
                 }
                 return;
             }
