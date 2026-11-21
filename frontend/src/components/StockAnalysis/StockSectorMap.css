@@ -200,3 +200,23 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-sector-map[data-market="HK"] {--stock-map-up: #15683e; --stock-map-down: #ab2537;}
 
 .stock-sector-preview:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) {--map-preview-down: #65d694;}
+
+.stock-sector-map-location-marker {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 3px white, inset 0 0 0 5px #171717;
+    animation: stock-sector-map-locate 650ms ease-in-out 3 both;
+}
+@keyframes stock-sector-map-locate {
+    0%, 30% {opacity: 1;}
+    100% {opacity: 0;}
+}
+@media (prefers-reduced-motion: reduce) {
+    .stock-sector-map-location-marker {animation: stock-sector-map-locate-static 1950ms steps(1, end) both;}
+    @keyframes stock-sector-map-locate-static {
+        from {opacity: 1;}
+        to {opacity: 0;}
+    }
+}

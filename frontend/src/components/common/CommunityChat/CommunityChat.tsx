@@ -3,6 +3,7 @@ import {useTranslation} from 'react-i18next';
 import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
 import './CommunityChat.css';
 import CommunityAvatarMenu from './CommunityAvatarMenu';
+import {readStockChatScope, saveStockChatScope, type StockChatScope} from './stockChatScope';
 import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../../services/stockAnalysis';
 
 const FRAME_READY_TIMEOUT_MS = 15_000;
@@ -42,12 +43,16 @@ function resolveAvatar(path: unknown, origin: string) {
 const configuredUrl = import.meta.env.VITE_COMMUNITY_URL?.trim();
 const COMMUNITY_URL = configuredUrl || (import.meta.env.DEV ? 'http://localhost:5175' : 'https://vyact.vyvow.com');
 
+function sendStockScope(frame: HTMLIFrameElement | null, scope: StockChatScope, origin: string) {
+    frame?.contentWindow?.postMessage({type: 'vyact:community-select-scope', marketName: '', ...scope}, origin);
+}
+
 export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker}: {
     entry?: CommunityChatEntry;
     title: string;
     unavailableMessage: string;
     loadingIndicator?: ReactNode;
-    stockPicker?: (enabled: boolean, selectScope: (market: string, marketName: string, symbol?: string, stockName?: string) => void, accountMenu: ReactNode) => ReactNode;
+    stockPicker?: (enabled: boolean, scope: StockChatScope, selectScope: (scope: StockChatScope) => void, accountMenu: ReactNode) => ReactNode;
 }) {
     const {i18n} = useTranslation();
     const shortcuts = entry === 'stock-analysis' ? STOCK_COMMUNITY_SHORTCUTS : COMMUNITY_SHORTCUTS;
@@ -58,6 +63,10 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const [picker, setPicker] = useState({visible: false, enabled: false});
     const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string} | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
+    const [stockScope, setStockScope] = useState(readStockChatScope);
+    const stockScopeRef = useRef(stockScope);
+    const restoredStockScope = useRef(false);
+
     const [initialTheme] = useState(() => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
     const hasLoadingIndicator = loadingIndicator != null;
     useEffect(() => {
@@ -119,6 +128,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             requestPickerStatus();
         };
         const onFrameLoad = () => {
+            restoredStockScope.current = false;
             syncFrame();
             if (entry !== 'stock-analysis') setFrameReady(true);
         };
@@ -148,6 +158,11 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 if (event.data.ready !== false) setFrameReady(true);
                 setPicker({visible: event.data.visible === true, enabled: event.data.enabled === true});
                 const {nickname, nicknameEditLabel, avatarPath, avatarEditLabel, logoutLabel} = event.data;
+                if (typeof nickname !== 'string') restoredStockScope.current = false;
+                if (event.data.enabled === true && !restoredStockScope.current) {
+                    restoredStockScope.current = true;
+                    if (stockScopeRef.current.market) sendStockScope(frame, stockScopeRef.current, origin);
+                }
                 setAccount(typeof nickname === 'string' && typeof logoutLabel === 'string' ? {
                     nickname, logoutLabel,
                     nicknameEditLabel: typeof nicknameEditLabel === 'string' ? nicknameEditLabel : undefined,
@@ -182,8 +197,18 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     url.searchParams.set('entry', entry);
     url.searchParams.set('theme', initialTheme);
     if (initialLanguage) url.searchParams.set('lang', initialLanguage);
-    const selectScope = (market: string, marketName: string, symbol?: string, stockName?: string) => {
-        iframe.current?.contentWindow?.postMessage({type: 'vyact:community-select-scope', market, marketName, symbol, stockName}, url.origin);
+    const selectScope = (scope: StockChatScope) => {
+        const previous = stockScopeRef.current;
+        const sameSelection = previous.market === scope.market && previous.symbol === scope.symbol;
+        if (sameSelection && previous.stockName === scope.stockName) return;
+        stockScopeRef.current = scope;
+        setStockScope(scope);
+        saveStockChatScope(scope);
+        if (sameSelection) {
+            iframe.current?.contentWindow?.postMessage({type: 'vyact:community-stock-label', ...scope}, url.origin);
+        } else {
+            sendStockScope(iframe.current, scope, url.origin);
+        }
     };
     const accountMenu = account && <CommunityAvatarMenu key={account.nickname} {...account}
         onEditNickname={() => {
@@ -198,7 +223,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const waitingForFrame = hasLoadingIndicator && !frameReady;
     return <>
         {entry === 'stock-analysis' && (picker.visible || account) &&
-            <div hidden={!picker.visible}>{stockPicker?.(picker.enabled, selectScope, accountMenu)}</div>}
+            <div hidden={!picker.visible}>{stockPicker?.(picker.enabled, stockScope, selectScope, accountMenu)}</div>}
         <div className="community-chat-stage">
             <iframe ref={iframe} className="community-chat-frame" src={url.href} aria-label={title}
                 aria-hidden={waitingForFrame || undefined} data-loading={waitingForFrame || undefined}

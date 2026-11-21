@@ -1,0 +1,17 @@
+.stock-map-search-dialog .stock-group-search-results[hidden] {
+    display: none;
+}
+
+.stock-map-search-dialog .stock-map-search-empty {
+    place-content: center;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: .875rem;
+    line-height: 1.5;
+}
+
+.stock-map-search-dialog .stock-group-search-results button[aria-selected="true"] {
+    background: var(--surface2);
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}

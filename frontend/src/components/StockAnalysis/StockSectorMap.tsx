@@ -24,6 +24,8 @@ import useSectorPreviewPosition, {PREVIEW_POINTER_GAP} from './useSectorPreviewP
 import {sortPreviewStocks} from './sectorPreviewSort';
 import usePreviewSortModifier from './usePreviewSortModifier';
 import useMarketOpeningRefresh from './useMarketOpeningRefresh';
+import StockMapSearchDialog from './StockMapSearchDialog';
+import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import './StockSectorMap.css';
 
 function tileStyle(node: HierarchyRectangularNode<MapNode>, width: number, height: number) {
@@ -113,6 +115,10 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const {sortByChange, trackSortModifier} = usePreviewSortModifier();
     const [preview, setPreview] = useState<{sectorName: string; industryName?: string; remainder?: boolean; symbol?: string}>();
     const [size, setSize] = useState({width: 0, height: 0});
+    const [mapSearchOpen, setMapSearchOpen] = useState(false);
+    const [locatedStock, setLocatedStock] = useState<{symbol: string; version: number}>();
+    const searchTrigger = useRef<HTMLElement | null>(null);
+    const locationMarker = useRef<HTMLDivElement>(null);
     const surface = useRef<HTMLDivElement>(null);
     const previewPanel = useRef<HTMLElement>(null);
     const loadedMarket = useRef<StockMarket | undefined>(undefined);
@@ -192,6 +198,47 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             .paddingTop(mapHeaderHeight)(root);
     }, [localizedSectors, selectedSector, width, height, market, stockGroups]);
 
+    const visibleTiles = useMemo(() => layout?.leaves().filter(node =>
+        (node.data.stock || node.data.sector) && node.x1 > node.x0 && node.y1 > node.y0) ?? [], [layout]);
+    const searchableStocks = useMemo(() => {
+        const bySymbol = new Map<string, SectorStock>();
+        for (const {data: {stock}} of visibleTiles) {
+            if (stock) bySymbol.set(stock.symbol, stock);
+        }
+        return [...bySymbol.values()].sort((a, b) => a.symbol.localeCompare(b.symbol, i18n.resolvedLanguage, {numeric: true}));
+    }, [visibleTiles, i18n.resolvedLanguage]);
+    const locatedTile = locatedStock && visibleTiles.find(node => node.data.stock?.symbol === locatedStock.symbol);
+
+    useEffect(() => {
+        const openMapSearch = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || event.isComposing || !(event.metaKey || event.ctrlKey) ||
+                event.altKey || event.shiftKey || event.key.toLowerCase() !== 'f' ||
+                !surface.current?.getClientRects().length || !searchableStocks.length) return;
+            const overlay = getTopmostModalOverlay();
+            if (overlay && !overlay.contains(surface.current) && !overlay.querySelector('.stock-map-search-dialog')) return;
+            event.preventDefault();
+            if (overlay?.querySelector('.stock-map-search-dialog')) {
+                overlay.querySelector<HTMLInputElement>('input[type="search"]')?.select();
+                return;
+            }
+            searchTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            clearTimeout(previewTimer.current);
+            setPreview(undefined);
+            setMapSearchOpen(true);
+        };
+        window.addEventListener('keydown', openMapSearch);
+        return () => window.removeEventListener('keydown', openMapSearch);
+    }, [searchableStocks.length]);
+
+    useEffect(() => {
+        if (locatedStock) locationMarker.current?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+    }, [locatedStock]);
+
+    const closeMapSearch = () => {
+        setMapSearchOpen(false);
+        searchTrigger.current?.focus({preventScroll: true});
+    };
+
     const historyDay = stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] ?? '' : snapshot?.quoteDate ?? snapshot?.date ?? '';
     const prefetchSymbols = useMemo(() => [...new Set((layout?.children ?? []).flatMap(group => group.leaves()
         .map(node => node.data.stock).filter((stock): stock is SectorStock => !!stock)
@@ -204,6 +251,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const previewStock = previewSector?.stocks.find(stock => stock.symbol === preview?.symbol);
     const showPreview = (sector: MarketSector, stock?: SectorStock, industryName?: string, remainder = false) => {
         clearTimeout(previewTimer.current);
+        if (locatedTile) return;
         previewTimer.current = setTimeout(() => {
             setPreview({sectorName: sector.name, industryName, remainder, symbol: stock?.symbol});
         }, 70);
@@ -239,6 +287,13 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const formatDay = (day: string) => dateFormat.format(new Date(day));
 
     return <section className="stock-sector-map" data-market={market} aria-label={title}>
+        {mapSearchOpen && <StockMapSearchDialog stocks={searchableStocks} onClose={closeMapSearch} onSelect={symbol => {
+            clearTimeout(previewTimer.current);
+            setPreview(undefined);
+            setMapSearchOpen(false);
+            surface.current?.focus({preventScroll: true});
+            setLocatedStock(current => ({symbol, version: (current?.version ?? 0) + 1}));
+        }}/>}
         <header className="stock-sector-map-heading">
             {selectedSector && <button type="button" className="modal-action-cancel" onClick={() => setSelectedSector(undefined)}>
                 <ArrowLeft size={14} aria-hidden="true"/>{t(stockGroups ? 'stockAnalysis.groups.tab' : 'stockAnalysis.sectorMap')}
@@ -257,7 +312,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         </header>
         <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>
         {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
-        <div className="stock-sector-map-surface" ref={surface} {...pointerPosition} onMouseMove={event => {pointerPosition.onMouseMove(event); trackSortModifier(event);}} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
+        <div className="stock-sector-map-surface" ref={surface} tabIndex={-1} {...pointerPosition} onMouseMove={event => {pointerPosition.onMouseMove(event); trackSortModifier(event);}} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
              aria-busy={stockGroups ? groupQuoteState.loading : !snapshot && !failed}>
             {stockGroups && groupQuoteState.loading && <StockLoadingIndicator title={title}/>}
@@ -293,10 +348,10 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                     {industryName(industry.name)}
                 </button>;
             })}
-            {layout?.leaves().map(node => {
+            {visibleTiles.map(node => {
                 const {sector, stock} = node.data;
                 const item = sector ?? stock;
-                if (!item || node.x1 <= node.x0 || node.y1 <= node.y0) return null;
+                if (!item) return null;
                 const tileWidth = node.x1 - node.x0;
                 const tileHeight = node.y1 - node.y0;
                 const label = market === 'US' && stock ? stock.symbol : item.name;
@@ -318,7 +373,10 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                     </button>;
             })}
             </div>
-            {previewContent && preview && <aside ref={previewPanel} className="stock-sector-map-preview-panel" style={{left: `var(--stock-preview-left, ${previewLeft}px)`, width: previewWidth}}
+            {locatedStock && locatedTile && <div key={locatedStock.version} ref={locationMarker} aria-hidden="true"
+                className="stock-sector-map-location-marker" style={tileStyle(locatedTile, width, height)}
+                onAnimationEnd={() => setLocatedStock(undefined)}/>}
+            {!locatedTile && previewContent && preview && <aside ref={previewPanel} className="stock-sector-map-preview-panel" style={{left: `var(--stock-preview-left, ${previewLeft}px)`, width: previewWidth}}
                 aria-label={previewContent.name}>
                 <SectorPreview sortByChange={sortByChange} premarket={premarket} customName={!!stockGroups || !!preview.industryName || !!preview.remainder} sector={previewContent} focused={previewStock} market={market} day={historyDay}/>
             </aside>}

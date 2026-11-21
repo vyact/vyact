@@ -70,8 +70,8 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
             <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {setActiveTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
             </div>
             {chatLoaded && <div className="stock-community-tab-content stock-community-chat-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
-                stockPicker={(enabled, onScopeChange, accountMenu) => <StockChatPicker localMarket={props.market} directory={props.directory}
-                    enabled={enabled} onScopeChange={onScopeChange} accountMenu={accountMenu}/>}
+                stockPicker={(enabled, scope, onScopeChange, accountMenu) => <StockChatPicker localMarket={props.market} directory={props.directory}
+                    enabled={enabled} scope={scope} onScopeChange={onScopeChange} accountMenu={accountMenu}/>}
                 loadingIndicator={<StockLoadingIndicator title={t('stockAnalysis.community.chat')} iconOnly/>}
                 title={t('stockAnalysis.community.chat')} unavailableMessage={t('stockAnalysis.community.unavailable')}/></div>}
         </div>
