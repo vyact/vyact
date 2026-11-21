@@ -19,4 +19,5 @@
 }
 .stock-community-picker .custom-select-wrap {min-width: 0;}
 .stock-community-picker .custom-select-trigger {min-height: 34px;}
+.stock-community-picker .custom-select-trigger .stock-market-flag {font-size: 17px;}
 .stock-community-picker-retry {grid-column: 2; justify-self: start;}

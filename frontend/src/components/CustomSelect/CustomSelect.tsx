@@ -30,6 +30,7 @@ interface CustomSelectProps {
     dropdownBackground?: string;  // 드롭다운 배경색 (기본: var(--surface2))
     dropdownClassName?: string;
     // 커스텀 렌더러
+    renderTriggerLabel?: (selectedLabel: string) => React.ReactNode;
     renderTrigger?: (selectedLabel: string, open: boolean) => React.ReactNode;
     renderOption?: (opt: SelectOption, isSelected: boolean, closeDropdown: () => void) => React.ReactNode;
     searchAction?: React.ReactNode;
@@ -74,6 +75,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        className = '',
                                                        dropdownBackground,
                                                        dropdownClassName = '',
+                                                       renderTriggerLabel,
                                                        renderTrigger,
                                                        renderOption,
                                                        searchAction,
@@ -364,7 +366,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 ) : (
                     <>
                         <span className="custom-select-trigger-label">
-                            {selectedLabel || resolvedPlaceholder}
+                            {renderTriggerLabel
+                                ? renderTriggerLabel(selectedLabel || resolvedPlaceholder)
+                                : selectedLabel || resolvedPlaceholder}
                         </span>
                         <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
                     </>

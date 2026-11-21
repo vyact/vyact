@@ -35,7 +35,7 @@ export default function StockChatPicker({localMarket, directory, enabled, scope,
     }
     return <div className="stock-community-picker">
         <StockReferenceScopeSelect value={scope.market || 'global'} globalLabel={t('stockAnalysis.community.allMarkets')}
-            portal disabled={!enabled} onChange={value => {
+            portal showTriggerIcon disabled={!enabled} onChange={value => {
                 const nextMarket = value === 'global' ? '' : value;
                 if (nextMarket !== scope.market) onScopeChange({market: nextMarket});
             }}/>

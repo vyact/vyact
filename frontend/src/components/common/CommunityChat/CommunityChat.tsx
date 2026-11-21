@@ -2,6 +2,7 @@ import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
 import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
 import './CommunityChat.css';
+import {createRoomStockNameResolver} from './resolveRoomStockNames';
 import CommunityAvatarMenu from './CommunityAvatarMenu';
 import {readStockChatScope, saveStockChatScope, type StockChatScope} from './stockChatScope';
 import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../../services/stockAnalysis';
@@ -78,6 +79,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         if (!COMMUNITY_URL) return;
         const origin = new URL(COMMUNITY_URL).origin;
         const translationSession = new AbortController();
+        const resolveRoomStockNames = createRoomStockNameResolver(language, translationSession.signal,
+            key => i18n.t(`stockAnalysis.${key}`, {ns: 'main', lng: language}));
         let translating = false;
         const translateMessage = async (frame: HTMLIFrameElement, requestId: string, text: string, targetLanguage: string) => {
             const reply = (result: {translation?: string; error?: 'busy' | 'failed'}) => {
@@ -135,6 +138,15 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const onMessage = (event: MessageEvent) => {
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-room-stock-names-request') {
+                const {keys} = event.data;
+                void resolveRoomStockNames(keys).then(names => {
+                    if (!translationSession.signal.aborted) frame.contentWindow?.postMessage({
+                        type: 'vyact:community-room-stock-names', names, language,
+                    }, origin);
+                });
+                return;
+            }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-translate-message') {
                 const {requestId, text, targetLanguage} = event.data;
                 if (typeof requestId === 'string' && /^[\da-f-]{36}$/i.test(requestId)
@@ -190,7 +202,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme', 'style', 'class']});
         syncFrame();
         return () => {translationSession.abort(); observer.disconnect(); frame?.removeEventListener('load', onFrameLoad); window.removeEventListener('message', onMessage);};
-    }, [entry, language, shortcuts]);
+    }, [entry, i18n, language, shortcuts]);
     if (!COMMUNITY_URL) return <p className="community-chat-unavailable">{unavailableMessage}</p>;
     const url = new URL(COMMUNITY_URL);
     url.searchParams.set('embed', 'true');
