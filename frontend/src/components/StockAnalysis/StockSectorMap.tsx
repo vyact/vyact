@@ -121,7 +121,6 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const locationMarker = useRef<HTMLDivElement>(null);
     const surface = useRef<HTMLDivElement>(null);
     const previewPanel = useRef<HTMLElement>(null);
-    const loadedMarket = useRef<StockMarket | undefined>(undefined);
     const previewTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(() => () => clearTimeout(previewTimer.current), []);
     const {width, height} = size;
@@ -133,7 +132,6 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     useEffect(() => {
         setPreview(undefined);
         const cached = stockSnapshotCache.readMap(market, i18n.resolvedLanguage);
-        loadedMarket.current = cached ? market : undefined;
         setSnapshot(cached);
         setSelectedSector(undefined);
         setFailed(false);
@@ -143,13 +141,12 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         const controller = new AbortController();
         let refreshing = false;
         const refresh = (initial = false) => {
-            if (isMarketWeekend(market) && (!initial || loadedMarket.current === market)) return;
+            if (!initial && isMarketWeekend(market)) return;
             if (refreshing) return;
             refreshing = true;
             return stockAnalysis.sectorMap(market, controller.signal, i18n.resolvedLanguage ?? i18n.language).then(result => {
             if (!controller.signal.aborted) {
                 stockSnapshotCache.writeMap(market, result, i18n.resolvedLanguage);
-                loadedMarket.current = market;
                 setSnapshot(result);
                 setSelectedSector(current => current ? result.sectors.find(sector => sector.name === current.name) : undefined);
                 setFailed(false);

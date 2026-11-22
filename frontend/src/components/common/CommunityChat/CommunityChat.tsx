@@ -4,8 +4,8 @@ import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
 import './CommunityChat.css';
 import {createRoomStockNameResolver} from './resolveRoomStockNames';
 import CommunityAvatarMenu from './CommunityAvatarMenu';
-import {readStockChatScope, saveStockChatScope, type StockChatScope} from './stockChatScope';
-import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../../services/stockAnalysis';
+import {readStockChatScope, saveStockChatScope, STOCK_SYMBOL, type StockChatScope} from './stockChatScope';
+import {STOCK_ANALYSIS_SHORTCUT_KEY, STOCK_MARKETS} from '../../../services/stockAnalysis';
 
 const FRAME_READY_TIMEOUT_MS = 15_000;
 const SHORTCUT_MESSAGE = 'vyact:community-shortcut';
@@ -138,6 +138,16 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const onMessage = (event: MessageEvent) => {
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-stock-scope-selected') {
+                const {market, symbol, stockName} = event.data;
+                const validMarket = STOCK_MARKETS.find(candidate => candidate === market);
+                if (!validMarket || typeof symbol !== 'string' || !STOCK_SYMBOL.test(symbol)) return;
+                const scope = {market: validMarket, symbol, stockName: typeof stockName === 'string' ? stockName : undefined};
+                stockScopeRef.current = scope;
+                setStockScope(scope);
+                saveStockChatScope(scope);
+                return;
+            }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-room-stock-names-request') {
                 const {keys} = event.data;
                 void resolveRoomStockNames(keys).then(names => {

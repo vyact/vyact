@@ -1,7 +1,7 @@
 import {STOCK_MARKETS, type StockMarket} from '../../../services/stockAnalysis';
 
 const STORAGE_KEY = 'vyact:stock-chat-scope';
-const STOCK_SYMBOL = /^[A-Z0-9^][A-Z0-9.:^=_-]{0,49}$/i;
+export const STOCK_SYMBOL = /^[A-Z0-9^][A-Z0-9.:^=_-]{0,49}$/i;
 
 export type StockChatScope = {
     market: StockMarket | '';

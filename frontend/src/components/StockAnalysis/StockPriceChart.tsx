@@ -12,6 +12,7 @@ import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft, type StockSymbol} from '../../services/stockAnalysis';
 import StockComparison from './StockComparison';
 import {chartPriceFormat} from './chartPriceFormat';
+import {chartActivityFormatter, chartActivityScale} from './chartActivityFormat';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {calculateIndicator, INDICATORS, type Indicator} from './technicalIndicators';
 
@@ -180,6 +181,8 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             const volumes = instance.addSeries(HistogramSeries, {
                 priceFormat: {type: 'volume'}, priceLineVisible: false, lastValueVisible: false,
             }, 1);
+            const activityFormatter = chartActivityFormatter(market);
+            let activityScale = 1;
             let latestActivity: {value: number; color: string} | undefined;
             const activityLabel = t(activityField === 'tradingValue' ? 'stockAnalysis.history.tradingValue' : 'stockAnalysis.volume');
             volumes.attachPrimitive({priceAxisViews: () => latestActivity ? [{
@@ -190,14 +193,23 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 tickVisible: () => false,
             }] : []});
             const updateVolumes = (rows: DailyPrice[]) => {
-                const latest = [...rows].reverse().find(row => row[activityField] != null);
-                latestActivity = latest ? {value: latest[activityField]!, color: latest.close >= latest.open ? rise : fall} : undefined;
-                volumes.setData(rows.map(row => {
-                const value = row[activityField];
-                return value == null ? {time: row.day} : {
-                    time: row.day, value, color: row.close >= row.open ? rise : fall,
-                };
-            }));
+                const scale = chartActivityScale(rows.map(row => row[activityField]));
+                if (scale !== activityScale) {
+                    activityScale = scale;
+                    volumes.applyOptions({priceFormat: scale === 1 ? {type: 'volume'} : {
+                        type: 'custom', minMove: 1 / scale,
+                        formatter: (value: number) => activityFormatter.format(value * scale),
+                    }});
+                }
+                latestActivity = undefined;
+                const data = rows.map(row => {
+                    const value = row[activityField];
+                    if (value == null || !Number.isFinite(value)) return {time: row.day};
+                    const activity = {value: value / scale, color: row.close >= row.open ? rise : fall};
+                    latestActivity = activity;
+                    return {time: row.day, ...activity};
+                });
+                volumes.setData(data);
             };
             updateVolumes(bars);
             dataUpdates.push(updateVolumes);

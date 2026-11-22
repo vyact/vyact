@@ -76,7 +76,9 @@ export const stockAnalysis = {
     sparklines: (symbols: string[], signal: AbortSignal) => request<Record<string, number[]>>('sparklines', signal, {
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({symbols: symbols.map(stockSymbolCode)}),
     }),
-    sectorMap: async (market: StockMarket, signal: AbortSignal, language = 'en') => normalizeStockSectorMap(await request<MarketSectorMap>(`sector-map/${market}?language=${encodeURIComponent(language)}`, signal)),
+    sectorMap: async (market: StockMarket, signal: AbortSignal, language = 'en') => normalizeStockSectorMap(await request<MarketSectorMap>(
+        `sector-map/${market}?language=${encodeURIComponent(language)}`, signal, {cache: 'no-store'},
+    )),
     async symbols(market: StockMarket, signal: AbortSignal, language = 'en'): Promise<StockSymbol[]> {
         const cached = stockSnapshotCache.readSymbols(market, language);
         if (cached && Date.now() - stockSnapshotCache.symbolsFetchedAt(market, language) < SYMBOL_DIRECTORY_CACHE_MS) return cached;

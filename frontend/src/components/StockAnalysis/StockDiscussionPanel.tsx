@@ -11,10 +11,17 @@ import StockLoadingIndicator from './StockLoadingIndicator';
 import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
+const ACTIVE_TAB_KEY = 'vyact:stock-discussion:active-tab';
 const DEFAULT_WIDTH = 340;
 const MIN_WIDTH = DEFAULT_WIDTH;
 const MAX_WIDTH = 720;
 const MIN_CONTENT_WIDTH = 320;
+type DiscussionTab = 'ai' | 'chat';
+
+function readActiveTab(): DiscussionTab {
+    try {return localStorage.getItem(ACTIVE_TAB_KEY) === 'chat' ? 'chat' : 'ai';} catch {return 'ai';}
+}
+
 function readLayout(): {width: number; collapsed: boolean} {
     try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
@@ -26,8 +33,13 @@ function readLayout(): {width: number; collapsed: boolean} {
 export default function StockDiscussionPanel(props: ComponentProps<typeof StockDiscussionSidebar>) {
     const {t} = useTranslation('main');
     const [layout, setLayout] = useState(readLayout);
-    const [activeTab, setActiveTab] = useState<'ai' | 'chat'>('ai');
-    const [chatLoaded, setChatLoaded] = useState(false);
+    const [activeTab, setActiveTab] = useState(readActiveTab);
+    const [chatLoaded, setChatLoaded] = useState(activeTab === 'chat');
+    const selectTab = (tab: DiscussionTab) => {
+        setActiveTab(tab);
+        if (tab === 'chat') setChatLoaded(true);
+        try {localStorage.setItem(ACTIVE_TAB_KEY, tab);} catch { /* Optional tab preference. */ }
+    };
     const panel = useRef<HTMLDivElement>(null);
     const previewWidth = useCallback((width: number) => {
         panel.current?.style.setProperty('--stock-discussion-width', `${width}px`);
@@ -64,10 +76,10 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
                 width: clampWidth(layout.width === DEFAULT_WIDTH ? DEFAULT_WIDTH * 2 : DEFAULT_WIDTH),
             })}/>}
         <div className="stock-discussion-body" inert={layout.collapsed} aria-hidden={layout.collapsed}>
-            <div className="stock-community-tabs" data-tooltip-disabled><ModalTabs activeKey={activeTab} onChange={tab => {setActiveTab(tab); if (tab === 'chat') setChatLoaded(true);}}
+            <div className="stock-community-tabs" data-tooltip-disabled><ModalTabs activeKey={activeTab} onChange={selectTab}
                 tabs={[{key: 'ai', label: t('stockAnalysis.discussion.ai')}, {key: 'chat', label: t('stockAnalysis.community.chat')}]}/></div>
             <div className="stock-community-tab-content" hidden={activeTab !== 'ai'}>
-            <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {setActiveTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
+            <StockDiscussionSidebar {...props} isVisible={!layout.collapsed && activeTab === 'ai'} onReveal={() => {selectTab('ai'); if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
             </div>
             {chatLoaded && <div className="stock-community-tab-content stock-community-chat-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
                 stockPicker={(enabled, scope, onScopeChange, accountMenu) => <StockChatPicker localMarket={props.market} directory={props.directory}
