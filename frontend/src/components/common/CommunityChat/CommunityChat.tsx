@@ -1,4 +1,6 @@
-import {useEffect, useRef, useState, type ReactNode} from 'react';
+import ImageViewer from '../../ImageViewer/ImageViewer';
+import useObjectUrl from '../useObjectUrl';
+import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
 import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
 import './CommunityChat.css';
@@ -9,10 +11,11 @@ import {STOCK_ANALYSIS_SHORTCUT_KEY, STOCK_MARKETS} from '../../../services/stoc
 
 const FRAME_READY_TIMEOUT_MS = 15_000;
 const SHORTCUT_MESSAGE = 'vyact:community-shortcut';
+const MAX_CHART_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_COMMUNITY_MESSAGE_LENGTH = 2000;
 const TRANSLATION_TIMEOUT_MS = 310_000;
 const TRANSLATION_LANGUAGES = new Set(SUPPORTED_LANGUAGES.map(({value}) => value));
-const SHIFT_SHORTCUT_KEYS = [STOCK_ANALYSIS_SHORTCUT_KEY, 'A', 'B', 'D', 'G', 'J', 'L', 'M', 'N'];
+const SHIFT_SHORTCUT_KEYS = [STOCK_ANALYSIS_SHORTCUT_KEY, 'A', 'B', 'D', 'G', 'J', 'L', 'M', 'N', 'S'];
 const COMMUNITY_SHORTCUTS = new Map([
     ...SHIFT_SHORTCUT_KEYS.map(key => [`Shift+Key${key}`, key] as const),
     ['Digit1', '1'],
@@ -48,11 +51,18 @@ function sendStockScope(frame: HTMLIFrameElement | null, scope: StockChatScope, 
     frame?.contentWindow?.postMessage({type: 'vyact:community-select-scope', marketName: '', ...scope}, origin);
 }
 
-export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker}: {
+function ignoreChartIndexChange() {}
+
+function sendChartAvailability(frame: HTMLIFrameElement | null, origin: string, available: boolean) {
+    frame?.contentWindow?.postMessage({type: 'vyact:community-chart-availability', available}, origin);
+}
+
+export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart}: {
     entry?: CommunityChatEntry;
     title: string;
     unavailableMessage: string;
     loadingIndicator?: ReactNode;
+    captureChart?: () => Promise<Blob | null>;
     stockPicker?: (enabled: boolean, scope: StockChatScope, selectScope: (scope: StockChatScope) => void, accountMenu: ReactNode) => ReactNode;
 }) {
     const {i18n} = useTranslation();
@@ -64,6 +74,19 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const [picker, setPicker] = useState({visible: false, enabled: false});
     const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string} | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
+    const [chartImage, setChartImage] = useState<Blob>();
+    const chartImageUrl = useObjectUrl(chartImage);
+    const closeChartImage = useCallback(() => {
+        setChartImage(undefined);
+        if (!iframe.current?.closest('[hidden], [inert]')) iframe.current?.focus();
+    }, []);
+    const chartCapture = useRef(captureChart);
+    useEffect(() => {
+        chartCapture.current = captureChart;
+        if (entry === 'stock-analysis' && COMMUNITY_URL) {
+            sendChartAvailability(iframe.current, new URL(COMMUNITY_URL).origin, !!captureChart);
+        }
+    }, [captureChart, entry]);
     const [stockScope, setStockScope] = useState(readStockChatScope);
     const stockScopeRef = useRef(stockScope);
     const restoredStockScope = useRef(false);
@@ -129,6 +152,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const syncFrame = () => {
             sendTheme();
             requestPickerStatus();
+            if (entry === 'stock-analysis') sendChartAvailability(iframe.current, origin, !!chartCapture.current);
         };
         const onFrameLoad = () => {
             restoredStockScope.current = false;
@@ -138,6 +162,30 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const onMessage = (event: MessageEvent) => {
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-open') {
+                const {image} = event.data;
+                if (!frame.closest('[hidden], [inert]') && image instanceof Blob
+                    && image.type === 'image/png' && image.size > 0 && image.size <= MAX_CHART_IMAGE_BYTES) {
+                    frame.blur();
+                    setChartImage(image);
+                }
+                return;
+            }
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-status') {
+                sendChartAvailability(frame, origin, !!chartCapture.current);
+                return;
+            }
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-request') {
+                const {requestId} = event.data;
+                if (typeof requestId !== 'string' || !/^[a-f0-9-]{36}$/i.test(requestId)) return;
+                const reply = (chart: Blob | null) => frame.contentWindow?.postMessage({
+                    type: 'vyact:community-chart-result', requestId, chart,
+                }, origin);
+                const capture = chartCapture.current;
+                if (capture && !frame.closest('[hidden], [inert]')) void capture().then(reply, () => reply(null));
+                else reply(null);
+                return;
+            }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-stock-scope-selected') {
                 const {market, symbol, stockName} = event.data;
                 const validMarket = STOCK_MARKETS.find(candidate => candidate === market);
@@ -197,8 +245,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 || frame.closest('[hidden], [inert]')) return;
             const {code, shiftKey, metaKey, ctrlKey} = event.data;
             if (typeof code !== 'string' || typeof shiftKey !== 'boolean'
-                || typeof metaKey !== 'boolean' || typeof ctrlKey !== 'boolean' || metaKey === ctrlKey
-                || (code === 'ArrowLeft' && !metaKey)) return;
+                || typeof metaKey !== 'boolean' || typeof ctrlKey !== 'boolean' || metaKey === ctrlKey) return;
             const key = shortcuts.get(shiftKey ? `Shift+${code}` : code);
             if (!key) return;
             frame.dispatchEvent(new KeyboardEvent('keydown', {
@@ -244,6 +291,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         onLogout={() => iframe.current?.contentWindow?.postMessage({type: 'vyact:community-logout'}, url.origin)}/>;
     const waitingForFrame = hasLoadingIndicator && !frameReady;
     return <>
+        {chartImage && chartImageUrl && <ImageViewer images={[{src: chartImageUrl, alt: 'chart.png'}]}
+            currentIndex={0} onClose={closeChartImage} onIndexChange={ignoreChartIndexChange}/>}
         {entry === 'stock-analysis' && (picker.visible || account) &&
             <div hidden={!picker.visible}>{stockPicker?.(picker.enabled, stockScope, selectScope, accountMenu)}</div>}
         <div className="community-chat-stage">

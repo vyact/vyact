@@ -1,14 +1,16 @@
-import {useState} from 'react';
+import {useState, type ComponentProps} from 'react';
 import {sampleGroupStocks, GROUP_SAMPLE_SIZES, DEFAULT_GROUP_SAMPLE_SIZE} from './groupSampling';
 import {ChevronDown} from 'lucide-react';
 import './StockGroupDiscussionPanel.css';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
-import StockDiscussionPanel from './StockDiscussionPanel';
+import StockDiscussionSidebar from './StockDiscussionSidebar';
 import type {StockGroup} from './useStockGroups';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 
-export default function StockGroupDiscussionPanel({groups, market, directory, scopeType = 'group', weights}: {
+export default function StockGroupDiscussionPanel({groups, market, directory, scopeType = 'group', weights, isVisible, onReveal}: {
+    isVisible?: ComponentProps<typeof StockDiscussionSidebar>['isVisible'];
+    onReveal?: ComponentProps<typeof StockDiscussionSidebar>['onReveal'];
     weights?: Record<string, number>; scopeType?: 'group' | 'sector'; groups: StockGroup[]; market: StockMarket; directory: StockSymbol[];
 }) {
     const {t} = useTranslation('main');
@@ -44,7 +46,7 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
         <span className="stock-group-select-name">{label}</span><span className="stock-group-select-count">{count}</span>
     </span>;
     const symbol = `MARKET-${market}`;
-    return <StockDiscussionPanel market={market} directory={directory}
+    return <StockDiscussionSidebar isVisible={isVisible} onReveal={onReveal} market={market} directory={directory}
         stock={{symbol, name}} groups={contextGroups} scopeType={scopeType}
         groupPicker={<CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t(`stockAnalysis.discussion.${scopeType === 'sector' ? 'selectSector' : 'selectGroup'}`)}
                 searchable options={options}

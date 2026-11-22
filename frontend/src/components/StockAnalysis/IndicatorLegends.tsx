@@ -11,15 +11,15 @@ import './IndicatorSettings.css';
 
 const INDICATOR_LINE_KEYS: Record<string, string> = {Tenkan: 'conversion', Kijun: 'base', 'Senkou A': 'spanA', 'Senkou B': 'spanB', Chikou: 'lagging', M: 'middle', U: 'upper', L: 'lower'};
 
-export default function IndicatorLegends({chart, indicators, settings, bars, hoveredDay}: {
-    chart: IChartApi | null; indicators: Indicator[]; settings: IndicatorSettings; bars: DailyPrice[]; hoveredDay?: string;
+export default function IndicatorLegends({chart, indicators, settings, bars, hoveredDay, hasActivity}: {
+    chart: IChartApi | null; indicators: Indicator[]; settings: IndicatorSettings; bars: DailyPrice[]; hoveredDay?: string; hasActivity: boolean;
 }) {
     const {t, i18n} = useTranslation('main');
     if (!chart) return null;
     const number = new Intl.NumberFormat(i18n.resolvedLanguage, {maximumFractionDigits: 2, notation: 'compact'});
     const hoverIndex = bars.findIndex(row => row.day === hoveredDay);
     const index = hoveredDay ? hoverIndex : bars.length - 1;
-    const firstPane = bars.some(row => row.volume !== null) ? 2 : 1;
+    const firstPane = hasActivity ? 2 : 1;
     const panels = indicators.filter(kind => !OVERLAY_INDICATORS.includes(kind as OverlayIndicator));
     const overlays = indicators.filter(kind => OVERLAY_INDICATORS.includes(kind as OverlayIndicator));
     return <>{indicators.map(kind => {

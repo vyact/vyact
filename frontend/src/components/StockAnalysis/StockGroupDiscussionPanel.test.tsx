@@ -12,7 +12,7 @@ vi.mock('react', () => ({useState: (initial: unknown) => typeof initial === 'fun
     : [state.selectedIds, (update: (value: string[]) => string[]) => {state.selectedIds = update(state.selectedIds);}]}));
 beforeEach(() => {state.selectedIds = []; state.sampleSize = 3;});
 vi.mock('react-i18next', () => ({useTranslation: () => ({t: (key: string) => key})}));
-vi.mock('./StockDiscussionPanel', () => ({default: (props: Record<string, unknown>) => {
+vi.mock('./StockDiscussionSidebar', () => ({default: (props: Record<string, unknown>) => {
     state.props = props;
     return <div>{props.groupPicker as ReactNode}{props.groupSampling as ReactNode}</div>;
 }}));

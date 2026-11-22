@@ -1,5 +1,5 @@
 import ChartToolShortcuts from './ChartToolShortcuts';
-import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
+import {drawChartIndicatorLegends, type ChartSnapshotContext, type ChartSnapshot} from './chartSnapshot';
 import {attachBandFill} from './chartBandFill';
 import {OVERLAY_INDICATORS, type OverlayIndicator} from './overlayIndicators';
 import IndicatorSettingsDialog from './IndicatorSettingsDialog';
@@ -159,7 +159,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         captureChart.current = () => {
             const settings = snapshotSettings.current;
             const visible = instance.timeScale().getVisibleRange();
-            return {canvas: instance.takeScreenshot(true, false), context: {
+            const canvas = instance.takeScreenshot(true, false);
+            drawChartIndicatorLegends(canvas, instance.chartElement());
+            return {canvas, context: {
                 symbol: settings.symbol, name: settings.name, interval: settings.interval,
                 comparison_mode: settings.returnMode ? 'return' : 'price',
                 captured_at: new Date().toISOString(),
@@ -561,7 +563,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 setMemoDialog(undefined);
             }}
             onClose={() => setMemoDialog(undefined)} onEdit={() => setMemoDialog({...memoDialog, editing: true})}/>}
-        <IndicatorLegends chart={chartInstance} indicators={indicators} settings={indicatorSettings} bars={bars} hoveredDay={hoveredDay}/>
+        <IndicatorLegends chart={chartInstance} indicators={indicators} settings={indicatorSettings} bars={bars} hoveredDay={hoveredDay} hasActivity={hasActivity}/>
         {indicatorSettingsOpen && <IndicatorSettingsDialog settings={indicatorSettings} onClose={() => setIndicatorSettingsOpen(false)} onSave={settings => {
             savedRange.current = chart.current?.timeScale().getVisibleLogicalRange() ?? null;
             setIndicatorSettings(settings);

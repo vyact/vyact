@@ -4,8 +4,8 @@ export default function useStockBackShortcut(enabled: boolean, onBack: () => voi
     useEffect(() => {
         if (!enabled) return;
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.defaultPrevented || event.isComposing || !event.metaKey
-                || event.ctrlKey || event.shiftKey || event.altKey || event.key !== 'ArrowLeft') return;
+            if (event.defaultPrevented || event.isComposing || event.metaKey === event.ctrlKey
+                || event.shiftKey || event.altKey || event.key !== 'ArrowLeft') return;
             const target = event.target;
             if (target instanceof HTMLElement && (target.isContentEditable
                 || target.closest('input, textarea, select, [role="textbox"]'))) return;

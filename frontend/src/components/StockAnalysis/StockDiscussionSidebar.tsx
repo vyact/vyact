@@ -4,7 +4,7 @@ import StockContextPeriod from './StockContextPeriod';
 import {normalizeContextRange, type StockContextRange} from './stockContextRange';
 import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
-import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
+import {chartSnapshotPng, type ChartSnapshotContext, type ChartSnapshot} from './chartSnapshot';
 import {useCallback, useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
 import {ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark, MessageSquareText} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -84,8 +84,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
         setChartError(false);
         try {
             const snapshot = captureChart.current();
-            const canvas = snapshot.canvas;
-            const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('capture_failed')), 'image/png'));
+            const blob = await chartSnapshotPng(snapshot.canvas);
             const data = new FormData();
             data.append('file', blob, `${stock.symbol}-chart.png`);
             const response = await fetch('/api/images/upload', {method: 'POST', body: data});
