@@ -9,12 +9,15 @@ import re
 import asyncio
 from contextlib import aclosing
 from services.chat_queue import chat_request_lock
+from services.db import SETTINGS_INDEX
 from services.user_memory import capture_memory_enabled_for_turn, memory_enabled_for_turn
 from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse
+from typing import Literal
 
 import json
-from fastapi import APIRouter, HTTPException, Request
+from elasticsearch import NotFoundError
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -1462,6 +1465,49 @@ class TranslateRequest(BaseModel):
     save_history: bool = False
     conv_id: str = ""
     history_label: str = ""  # 히스토리에 표시할 user 메시지 (없으면 자동 생성)
+
+
+COMMUNITY_TRANSLATION_SETTINGS_KEY = "community_translation_preferences"
+CommunityTranslationLanguage = Literal["", "ko", "en", "es", "fr", "zh", "ja", "th", "vi"]
+
+
+class CommunityTranslationPreferences(BaseModel):
+    incoming: CommunityTranslationLanguage = ""
+    outgoing: CommunityTranslationLanguage = ""
+
+
+class CommunityTranslationPreferenceChange(BaseModel):
+    direction: Literal["incoming", "outgoing"]
+    language: CommunityTranslationLanguage
+
+
+@router.get("/community/translation-preferences")
+async def get_community_translation_preferences(response: Response) -> CommunityTranslationPreferences:
+    response.headers["Cache-Control"] = "no-store"
+    es = get_es()
+    try:
+        result = await es.get(index=SETTINGS_INDEX, id=COMMUNITY_TRANSLATION_SETTINGS_KEY)
+    except NotFoundError:
+        return CommunityTranslationPreferences()
+    finally:
+        await es.close()
+    return CommunityTranslationPreferences.model_validate(result["_source"]["value"])
+
+
+@router.patch("/community/translation-preferences")
+async def update_community_translation_preferences(body: CommunityTranslationPreferenceChange):
+    es = get_es()
+    try:
+        await es.update(
+            index=SETTINGS_INDEX,
+            id=COMMUNITY_TRANSLATION_SETTINGS_KEY,
+            doc={"key": COMMUNITY_TRANSLATION_SETTINGS_KEY, "value": {body.direction: body.language}},
+            doc_as_upsert=True,
+            retry_on_conflict=3,
+        )
+    finally:
+        await es.close()
+    return {"ok": True}
 
 
 class CommunityTranslateRequest(BaseModel):

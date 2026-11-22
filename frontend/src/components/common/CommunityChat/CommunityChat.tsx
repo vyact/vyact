@@ -60,6 +60,11 @@ function sendChartAvailability(frame: HTMLIFrameElement | null, origin: string, 
     frame?.contentWindow?.postMessage({type: 'vyact:community-chart-availability', available, kind}, origin);
 }
 
+const TRANSLATION_PREFERENCES_TIMEOUT_MS = 15_000;
+const TRANSLATION_PREFERENCES_URL = '/api/community/translation-preferences';
+const TRANSLATION_PREFERENCES_UPDATED = 'vyact:community-translation-preferences-updated';
+let translationPreferenceWrites: Promise<unknown> = Promise.resolve();
+
 export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart, chartAttachmentKind = 'chart'}: {
     entry?: CommunityChatEntry;
     title: string;
@@ -163,6 +168,43 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             syncFrame();
             if (entry !== 'stock-analysis') setFrameReady(true);
         };
+        let preferencesRead = 0;
+        const sendTranslationPreferences = async (frame: HTMLIFrameElement, change?: {direction: string; language: string}) => {
+            const reply = (data: object) => {
+                if (!translationSession.signal.aborted) frame.contentWindow?.postMessage({
+                    type: 'vyact:community-translation-preferences', ...data,
+                }, origin);
+            };
+            const read = change ? undefined : ++preferencesRead;
+            try {
+                if (change) {
+                    const write = translationPreferenceWrites.then(() => fetch(TRANSLATION_PREFERENCES_URL, {
+                        method: 'PATCH',
+                        signal: AbortSignal.timeout(TRANSLATION_PREFERENCES_TIMEOUT_MS),
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(change),
+                    }));
+                    translationPreferenceWrites = write.catch(() => {});
+                    const response = await write;
+                    if (!response.ok) throw new Error();
+                    window.dispatchEvent(new Event(TRANSLATION_PREFERENCES_UPDATED));
+                    return;
+                }
+                const response = await fetch(TRANSLATION_PREFERENCES_URL, {
+                    cache: 'no-store',
+                    signal: AbortSignal.any([translationSession.signal, AbortSignal.timeout(TRANSLATION_PREFERENCES_TIMEOUT_MS)]),
+                });
+                if (!response.ok) throw new Error();
+                const preferences = await response.json();
+                if (read === preferencesRead) reply({preferences});
+            } catch {
+                if (change || read === preferencesRead) reply({failed: true});
+            }
+        };
+        const refreshTranslationPreferences = () => {
+            if (iframe.current) void sendTranslationPreferences(iframe.current);
+        };
+        window.addEventListener(TRANSLATION_PREFERENCES_UPDATED, refreshTranslationPreferences);
         const onMessage = (event: MessageEvent) => {
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
@@ -209,7 +251,19 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 });
                 return;
             }
-            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-translate-message') {
+            if (event.data?.type === 'vyact:community-translation-preferences-request') {
+                void sendTranslationPreferences(frame);
+                return;
+            }
+            if (event.data?.type === 'vyact:community-translation-preference-change') {
+                const {direction, language: target} = event.data;
+                if ((direction === 'incoming' || direction === 'outgoing')
+                    && typeof target === 'string' && (target === '' || TRANSLATION_LANGUAGES.has(target))) {
+                    void sendTranslationPreferences(frame, {direction, language: target});
+                }
+                return;
+            }
+            if (event.data?.type === 'vyact:community-translate-message') {
                 const {requestId, text, targetLanguage} = event.data;
                 if (typeof requestId === 'string' && /^[\da-f-]{36}$/i.test(requestId)
                     && typeof text === 'string' && text.length <= MAX_COMMUNITY_MESSAGE_LENGTH && text.trim()) {
@@ -222,6 +276,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             }
             if (event.data?.type === 'vyact:community-ready') {
                 syncFrame();
+                void sendTranslationPreferences(frame);
                 return;
             }
             if (event.data?.type === 'vyact:community-pointerdown') {
@@ -269,7 +324,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const observer = new MutationObserver(sendTheme);
         observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme', 'style', 'class']});
         syncFrame();
-        return () => {translationSession.abort(); observer.disconnect(); frame?.removeEventListener('load', onFrameLoad); window.removeEventListener('message', onMessage);};
+        return () => {window.removeEventListener(TRANSLATION_PREFERENCES_UPDATED, refreshTranslationPreferences); translationSession.abort(); observer.disconnect(); frame?.removeEventListener('load', onFrameLoad); window.removeEventListener('message', onMessage);};
     }, [entry, i18n, language, shortcuts]);
     if (!COMMUNITY_URL) return <p className="community-chat-unavailable">{unavailableMessage}</p>;
     const url = new URL(COMMUNITY_URL);

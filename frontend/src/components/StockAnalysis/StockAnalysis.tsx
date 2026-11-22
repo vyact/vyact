@@ -123,6 +123,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const marketGroups = stockGroups.groups.filter(group => group.market === market);
     const selectedGroup = marketGroups.find(group => group.id === selectedGroupId) ?? marketGroups[0];
     const groupSymbols = new Set(marketGroups.flatMap(group => group.symbols));
+    const showEmptyGroups = listView === 'groups' && !groupSymbols.size;
     const dragProps = useStockGroupDrag((source, target) => {
         if (source.symbol && target.symbol) stockGroups.reorderStock(source.groupId, source.symbol, target.symbol, target.after);
         else stockGroups.reorder(market, source.groupId, target.groupId, target.after);
@@ -363,7 +364,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} sidebarOverlay={sidebarHover} onSidebarMouseEnter={onSidebarHoverEnter} onSidebarMouseLeave={onSidebarHoverLeave} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <div className="stock-analysis-inner has-discussion"><main className={`stock-analysis-content${active && detailTab === 'news' ? ' stock-analysis-content-news' : ''}`}>
             <GlobalMarketIndicators hidden={!!active} onOpen={openSymbol}/>
-            {!active && (listView === 'groups' && !groupSymbols.size
+            {!active && (showEmptyGroups
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
                 : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onCaptureChange={registerMapCapture} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
@@ -409,7 +410,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             </div>}
         </main>
         <StockDiscussionPanel market={active ? instrumentMarket : market} directory={symbols}
-            captureMap={!active && listView !== 'groups' ? captureMap : null}
+            captureMap={!active && !showEmptyGroups ? captureMap : null}
             captureChart={active && detailTab === 'chart' && rows?.length ? captureChart : undefined}
             renderAnalysis={visibility => {
                 if (active) return <StockDiscussionSidebar {...visibility} key={`${market}:${active.symbol}`}

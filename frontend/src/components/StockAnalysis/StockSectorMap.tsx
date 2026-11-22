@@ -293,7 +293,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(quoteTime, i18n.resolvedLanguage)})
             : t('stockAnalysis.premarket.unavailable')
         : quoteDay ? t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(quoteDay)}) : undefined;
-    const canCapture = !stockGroups && visibleTiles.length > 0;
+    const canCapture = visibleTiles.length > 0;
     useEffect(() => {
         if (!onCaptureChange || !canCapture) return;
         onCaptureChange(() => surface.current ? captureSectorMap(surface.current) : null);
