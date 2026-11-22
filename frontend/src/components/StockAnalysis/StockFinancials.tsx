@@ -41,15 +41,17 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
         return () => {controller.abort(); clearTimeout(timer);};
     }, [symbol, frequency, retry]);
     const language = i18n.resolvedLanguage ?? i18n.language;
+    const refreshInProgress = !error && (!data || data.refreshing === true);
     const percentFormatter = new Intl.NumberFormat(language, {maximumFractionDigits: 1, signDisplay: 'exceptZero'});
     const statements = Object.keys(FINANCIAL_METRICS) as (keyof typeof FINANCIAL_METRICS)[];
     return <section className="stock-financials" data-market={market} aria-label={tr('tab')} aria-busy={!data && !error}>
         <div className="stock-financials-controls">
             <div className="stock-financials-status" role="status">
-                {data?.checkedAt && <small>{tr('checkedAt')}: {new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'short', timeStyle: 'short'}).format(new Date(data.checkedAt))}</small>}
-                {data?.refreshing && <small>{tr('refreshing')}</small>}
-                {data?.refreshFailed && !data.refreshing && <small>{tr('refreshFailed')}</small>}
-                <button type="button" className="modal-action-cancel" disabled={data?.refreshing || (!data && !error)} aria-label={tr('refresh')} onClick={requestRefresh}><RefreshCw size={14}/></button>
+                <button type="button" className="modal-action-cancel" disabled={refreshInProgress} aria-label={tr(refreshInProgress ? 'refreshing' : 'refresh')} onClick={requestRefresh}>
+                    <RefreshCw size={14} className={refreshInProgress ? 'stock-financials-refresh-spinner' : undefined} aria-hidden="true"/>
+                </button>
+                {data?.checkedAt && <time dateTime={data.checkedAt}>{tr('checkedAt')}: {new Intl.DateTimeFormat(language, {dateStyle: 'short', timeStyle: 'short'}).format(new Date(data.checkedAt))}</time>}
+                {data?.refreshFailed && !data.refreshing && <span>{tr('refreshFailed')}</span>}
             </div>
             <ModalTabs tabs={(['yearly', 'quarterly'] as const).map(key => ({key, label: tr(key)}))} activeKey={frequency} onChange={setFrequency}/>
         </div>

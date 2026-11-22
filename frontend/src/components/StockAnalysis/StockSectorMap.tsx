@@ -26,6 +26,7 @@ import usePreviewSortModifier from './usePreviewSortModifier';
 import useMarketOpeningRefresh from './useMarketOpeningRefresh';
 import StockMapSearchDialog from './StockMapSearchDialog';
 import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
+import {captureSectorMap} from './sectorMapSnapshot';
 import './StockSectorMap.css';
 
 function tileStyle(node: HierarchyRectangularNode<MapNode>, width: number, height: number) {
@@ -100,7 +101,7 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen, directory = [], stockGroups, onSectorsChange}: {onSectorsChange?: (sectors: MarketSector[]) => void;market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
+export default function StockSectorMap({market, onOpen, directory = [], stockGroups, onSectorsChange, onCaptureChange}: {onCaptureChange?: (capture: (() => HTMLCanvasElement | null) | null) => void; onSectorsChange?: (sectors: MarketSector[]) => void;market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -279,9 +280,25 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     } : previewSector;
     const premarket = market === 'US' && (stockGroups ? groupQuoteState.quotes.some(quote => quote.session === 'premarket') : snapshot?.session === 'premarket');
     const quoteTime = stockGroups ? groupQuoteState.quotes.map(quote => quote.quoteTime ?? '').sort().slice(-1)[0] : snapshot?.quoteTime;
-    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan', TW: 'stockAnalysis.mapTaiwan', HK: 'stockAnalysis.mapHongKong', CN: 'stockAnalysis.mapChina'}[market]);
+    const marketTitle = t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan', TW: 'stockAnalysis.mapTaiwan', HK: 'stockAnalysis.mapHongKong', CN: 'stockAnalysis.mapChina'}[market]);
+    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : marketTitle;
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
+
+    const quoteDay = stockGroups
+        ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0]
+        : snapshot?.quoteDate ?? snapshot?.date;
+    const quoteDateLabel = premarket
+        ? quoteTime
+            ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(quoteTime, i18n.resolvedLanguage)})
+            : t('stockAnalysis.premarket.unavailable')
+        : quoteDay ? t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(quoteDay)}) : undefined;
+    const canCapture = !stockGroups && visibleTiles.length > 0;
+    useEffect(() => {
+        if (!onCaptureChange || !canCapture) return;
+        onCaptureChange(() => surface.current ? captureSectorMap(surface.current) : null);
+        return () => onCaptureChange(null);
+    }, [canCapture, onCaptureChange]);
 
     return <section className="stock-sector-map" data-market={market} aria-label={title}>
         {mapSearchOpen && <StockMapSearchDialog stocks={searchableStocks} onClose={closeMapSearch} onSelect={symbol => {
@@ -301,8 +318,8 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 {market === 'US' && <NewYorkClock/>}
             </div>
             <div className="stock-sector-map-controls">
-            {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
-                <span>{premarket ? quoteTime ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(quoteTime, i18n.resolvedLanguage)}) : t('stockAnalysis.premarket.unavailable') : t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
+            {quoteDateLabel && <div className="stock-sector-map-dates">
+                <span>{quoteDateLabel}</span>
             </div>}
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
             </div>

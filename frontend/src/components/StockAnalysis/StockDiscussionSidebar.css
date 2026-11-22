@@ -96,7 +96,7 @@
 
 .stock-discussion-messages {display: flex; flex-direction: column;}
 .stock-discussion-messages > .stock-discussion-empty {align-items: center; justify-content: center; text-align: center; padding: 28px 12px; margin-block: auto; color: var(--muted);}
-.stock-discussion-messages > .stock-discussion-empty h2 {color: var(--muted); font-weight: 500;}
+.stock-discussion-messages > .stock-discussion-empty h2 {color: var(--text); font-weight: 600;}
 .stock-discussion-messages > .stock-discussion-empty p {color: var(--muted);}
 .stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-attach-button {display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;}
 .stock-discussion-composer .stock-discussion-attach-button:hover:not(:disabled) {background: var(--surface2); color: var(--text);}
@@ -138,3 +138,8 @@
 .stock-discussion-file-drop-hint {position: absolute; inset: 8px 8px auto; z-index: 10; padding: 16px; border: 1px dashed var(--accent); border-radius: 10px; background: var(--surface); color: var(--accent); text-align: center; pointer-events: none;}
 
 .stock-discussion-context-settings > .stock-context-period {flex: 1; min-width: 0; flex-shrink: 1;}
+
+.stock-discussion-empty-logo {width: 36px; height: 36px; object-fit: contain;}
+.stock-discussion-empty-shortcuts {border: 0; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer;}
+.stock-discussion-empty-shortcuts:hover {color: var(--text);}
+.stock-discussion-empty-shortcuts kbd {margin-inline-start: 8px; font: inherit; font-weight: 600; white-space: nowrap;}

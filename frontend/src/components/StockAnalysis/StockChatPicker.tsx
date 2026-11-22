@@ -7,6 +7,8 @@ import useStockDirectory from './useStockDirectory';
 import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import type {StockChatScope} from '../common/CommunityChat/stockChatScope';
 
+const UNFILTERED_INSTRUMENT_LIMIT = 200;
+
 export default function StockChatPicker({localMarket, directory, enabled, scope, onScopeChange, accountMenu}: {
     localMarket: StockMarket;
     directory: StockSymbol[];
@@ -39,7 +41,7 @@ export default function StockChatPicker({localMarket, directory, enabled, scope,
                 const nextMarket = value === 'global' ? '' : value;
                 if (nextMarket !== scope.market) onScopeChange({market: nextMarket});
             }}/>
-        <CustomSelect optionsPageSize={100} value={selectedSymbol} searchable portal clearable onClear={() => onScopeChange({market})} disabled={!enabled || !hasMarket} ariaLabel={label} searchPlaceholder={label}
+        <CustomSelect optionsPageSize={100} unfilteredOptionsLimit={UNFILTERED_INSTRUMENT_LIMIT} value={selectedSymbol} searchable portal clearable onClear={() => onScopeChange({market})} disabled={!enabled || !hasMarket} ariaLabel={label} searchPlaceholder={label}
             placeholder={hasMarket ? label : t('stockAnalysis.community.selectMarketFirst')}
             options={instruments.map(({value, name}) => ({value, label: name === value ? value : `${name} · ${value}`}))}
             onChange={symbol => {

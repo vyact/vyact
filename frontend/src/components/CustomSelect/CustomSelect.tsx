@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import {Search, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -15,6 +15,7 @@ export interface SelectOption {
 interface CustomSelectProps {
     options: SelectOption[];
     optionsPageSize?: number;
+    unfilteredOptionsLimit?: number;
     value: string;
     selectedValues?: string[];
     onChange: (value: string) => void;
@@ -48,6 +49,15 @@ interface CustomSelectProps {
     showGroupLabels?: boolean;
 }
 
+function findNextEnabledOption(options: SelectOption[], activeIndex: number, direction: 1 | -1) {
+    let index = activeIndex < 0 && direction < 0 ? 0 : activeIndex;
+    for (let step = 0; step < options.length; step++) {
+        index = (index + direction + options.length) % options.length;
+        if (!options[index].disabled) return index;
+    }
+    return -1;
+}
+
 function revealOption(dropdown: HTMLDivElement | null, index: number) {
     const list = dropdown?.querySelector<HTMLElement>('.custom-select-list');
     const option = list?.querySelector<HTMLElement>(`[data-option-index="${index}"]`);
@@ -61,6 +71,7 @@ function revealOption(dropdown: HTMLDivElement | null, index: number) {
 const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        options,
                                                        optionsPageSize,
+                                                       unfilteredOptionsLimit,
                                                        value,
                                                        selectedValues,
                                                        onChange,
@@ -100,6 +111,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const [renderedPage, setRenderedPage] = useState({key: '', count: 0});
     const [activeIndex, setActiveIndex] = useState(-1);
     const [keyboardNavigation, setKeyboardNavigation] = useState(false);
+    const openingArrow = useRef<'ArrowDown' | 'ArrowUp' | null>(null);
     const listId = useId();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [dropdownPlacement, setDropdownPlacement] = useState<'up' | 'down'>('down');
@@ -112,28 +124,34 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         ? selectedValues.includes(optionValue)
         : optionValue === value;
     const showClearButton = clearable && Boolean(onClear) && Boolean(selectedValues?.length || value);
-    const matchingOptions = searchable && search
-        ? options.filter(o => `${o.label} ${o.description || ''}`.toLowerCase().includes(search.toLowerCase()))
-        : options;
-    const customValue = search.trim();
-    const filtered = allowCustomValue && customValue && !options.some(option => option.value === customValue)
-        ? [...matchingOptions, {value: customValue, label: customValue}]
-        : matchingOptions;
-
-    const optionKey = filtered.map(option => `${option.value}:${!!option.disabled}`).join('|');
-    const pageKey = `${search}:${optionKey}`;
+    const {filtered, pageKey} = useMemo(() => {
+        const query = (unfilteredOptionsLimit === undefined ? search : search.trim()).toLowerCase();
+        const matchingOptions = searchable && query
+            ? options.filter(option => `${option.label} ${option.description || ''}`.toLowerCase().includes(query))
+            : unfilteredOptionsLimit === undefined ? options : options.slice(0, unfilteredOptionsLimit);
+        const customValue = search.trim();
+        const filtered = allowCustomValue && customValue && !options.some(option => option.value === customValue)
+            ? [...matchingOptions, {value: customValue, label: customValue}]
+            : matchingOptions;
+        const optionKey = filtered.map(option => `${option.value}:${!!option.disabled}`).join('|');
+        return {filtered, pageKey: `${search}:${optionKey}`};
+    }, [options, search, searchable, allowCustomValue, unfilteredOptionsLimit]);
     const visibleCount = optionsPageSize ? Math.max(
         optionsPageSize, renderedPage.key === pageKey ? renderedPage.count : 0, activeIndex + 1,
     ) : filtered.length;
     useEffect(() => {
         if (!open) {setKeyboardNavigation(false); return;}
+        const arrow = openingArrow.current;
+        openingArrow.current = null;
         const selectedIndex = search ? -1 : filtered.findIndex(option => option.value === value && !option.disabled);
-        const nextIndex = selectedIndex >= 0 ? selectedIndex : filtered.findIndex(option => !option.disabled);
+        const nextIndex = selectedIndex >= 0 || !arrow
+            ? selectedIndex
+            : findNextEnabledOption(filtered, -1, arrow === 'ArrowDown' ? 1 : -1);
         setActiveIndex(nextIndex);
         const list = dropdownRef.current?.querySelector<HTMLElement>('.custom-select-list');
         if (list) list.scrollTop = 0;
         revealOption(dropdownRef.current, nextIndex);
-    }, [open, search, optionKey, value]);
+    }, [open, search, pageKey, value]);
 
     useEffect(() => {
         if (open && keyboardNavigation && activeIndex >= 0) revealOption(dropdownRef.current, activeIndex);
@@ -192,12 +210,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             }
         };
 
+        const handleScroll = (event: Event) => {
+            if (event.target instanceof Node && !event.target.contains(wrapRef.current)) return;
+            updateDropdownPlacement();
+        };
         updateDropdownPlacement();
         window.addEventListener('resize', updateDropdownPlacement);
-        window.addEventListener('scroll', updateDropdownPlacement, true);
+        window.addEventListener('scroll', handleScroll, true);
         return () => {
             window.removeEventListener('resize', updateDropdownPlacement);
-            window.removeEventListener('scroll', updateDropdownPlacement, true);
+            window.removeEventListener('scroll', handleScroll, true);
         };
     }, [open, filtered.length, portal]);
 
@@ -220,6 +242,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         if (!open) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault(); event.stopPropagation();
+                openingArrow.current = event.key;
                 onOpen?.(); setKeyboardNavigation(true); setOpen(true);
             }
             return;
@@ -228,14 +251,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             event.preventDefault(); event.stopPropagation();
             setKeyboardNavigation(true);
             const direction = event.key === 'ArrowDown' ? 1 : -1;
-            let next = activeIndex;
-            for (let step = 0; step < filtered.length; step++) {
-                next = (next + direction + filtered.length) % filtered.length;
-                if (!filtered[next].disabled) {setActiveIndex(next); break;}
-            }
+            setActiveIndex(findNextEnabledOption(filtered, activeIndex, direction));
         } else if (event.key === 'Enter' && (event.target === searchRef.current || event.target === triggerRef.current)) {
             event.preventDefault(); event.stopPropagation();
-            const option = filtered[activeIndex];
+            const option = activeIndex < 0 ? filtered.find(option => !option.disabled) : filtered[activeIndex];
             if (option && !option.disabled) handleSelect(option.value);
         } else if (event.key === 'Escape') {
             event.preventDefault(); event.stopPropagation(); closeDropdown(); triggerRef.current?.focus();
@@ -286,7 +305,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
             <div className="custom-select-list" id={listId} role="listbox" aria-multiselectable={selectedValues ? true : undefined}
                 onScroll={event => {
-                    if (!optionsPageSize) return;
+                    if (!optionsPageSize || visibleCount >= filtered.length) return;
                     const list = event.currentTarget;
                     if (list.scrollHeight - list.scrollTop - list.clientHeight < 100) {
                         setRenderedPage({key: pageKey, count: Math.min(filtered.length, visibleCount + optionsPageSize)});

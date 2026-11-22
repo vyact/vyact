@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {STOCK_ANALYSIS_SHORTCUT_KEY, STOCK_MARKETS} from '../../services/stockAnalysis';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -10,7 +10,15 @@ interface ShortcutModalProps {
 }
 
 const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose, scope}) => {
-    const {t} = useTranslation('main');
+    const {t} = useTranslation(['main', 'common']);
+    const closeButton = useRef<HTMLButtonElement>(null);
+    useEffect(() => {
+        const previous = document.activeElement;
+        closeButton.current?.focus({preventScroll: true});
+        return () => {
+            if (previous instanceof HTMLElement && previous.isConnected) previous.focus({preventScroll: true});
+        };
+    }, []);
     const SHORTCUTS = scope === 'stock-analysis' ? [
         ...STOCK_MARKETS.map((market, index) => ({keys: ['Cmd', String(index + 1)], desc: t(`stockAnalysis.${market}`)})),
         {keys: ['Cmd', '←'], desc: t('stockAnalysis.shortcuts.back')},
@@ -45,7 +53,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose, scope}) => {
         >
             <div className="shortcut-modal-header">
                 <span className="shortcut-modal-title">{scope === 'stock-analysis' ? `${t('stockAnalysis.title')} · ${t('shortcutModal.title')}` : t('shortcutModal.title')}</span>
-                <button className="shortcut-modal-close" onClick={onClose}>×
+                <button ref={closeButton} type="button" className="shortcut-modal-close" aria-label={t('common:close')} onClick={onClose}>×
                 </button>
             </div>
 

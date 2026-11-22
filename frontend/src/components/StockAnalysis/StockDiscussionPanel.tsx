@@ -9,7 +9,7 @@ import ModalTabs from '../common/ModalTabs/ModalTabs';
 import CommunityChat from '../common/CommunityChat/CommunityChat';
 import StockChatPicker from './StockChatPicker';
 import StockLoadingIndicator from './StockLoadingIndicator';
-import {chartSnapshotPng} from './chartSnapshot';
+import {chartSnapshotPng, MAX_CHAT_IMAGE_DIMENSION} from './chartSnapshot';
 import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
@@ -18,7 +18,6 @@ const DEFAULT_WIDTH = 340;
 const MIN_WIDTH = DEFAULT_WIDTH;
 const MAX_WIDTH = 720;
 const MIN_CONTENT_WIDTH = 320;
-const MAX_CHAT_CHART_DIMENSION = 2048;
 type DiscussionTab = 'ai' | 'chat';
 
 function readActiveTab(): DiscussionTab {
@@ -35,17 +34,18 @@ function readLayout(): {width: number; collapsed: boolean} {
 
 type AnalysisVisibility = Pick<ComponentProps<typeof StockDiscussionSidebar>, 'isVisible' | 'onReveal'>;
 
-export default function StockDiscussionPanel({market, directory, captureChart, renderAnalysis}: {
+export default function StockDiscussionPanel({market, directory, captureChart, captureMap, renderAnalysis}: {
     market: StockMarket;
     directory: StockSymbol[];
+    captureMap?: (() => HTMLCanvasElement | null) | null;
     captureChart?: ComponentProps<typeof StockDiscussionSidebar>['captureChart'];
     renderAnalysis: (visibility: AnalysisVisibility) => ReactNode;
 }) {
     const {t} = useTranslation('main');
     const captureChatChart = useCallback(async () => {
-        const snapshot = captureChart?.current?.();
-        return snapshot ? chartSnapshotPng(snapshot.canvas, MAX_CHAT_CHART_DIMENSION) : null;
-    }, [captureChart]);
+        const canvas = captureMap ? captureMap() : captureChart?.current?.()?.canvas;
+        return canvas ? chartSnapshotPng(canvas, MAX_CHAT_IMAGE_DIMENSION) : null;
+    }, [captureChart, captureMap]);
     const [layout, setLayout] = useState(readLayout);
     const [activeTab, setActiveTab] = useState(readActiveTab);
     const [chatLoaded, setChatLoaded] = useState(activeTab === 'chat');
@@ -102,7 +102,8 @@ export default function StockDiscussionPanel({market, directory, captureChart, r
                 })}
             </div>
             {chatLoaded && <div className="stock-community-tab-content stock-community-chat-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
-                captureChart={captureChart ? captureChatChart : undefined}
+                captureChart={captureChart || captureMap ? captureChatChart : undefined}
+                chartAttachmentKind={captureMap ? 'sector-map' : 'chart'}
                 stockPicker={(enabled, scope, onScopeChange, accountMenu) => <StockChatPicker localMarket={market} directory={directory}
                     enabled={enabled} scope={scope} onScopeChange={onScopeChange} accountMenu={accountMenu}/>}
                 loadingIndicator={<StockLoadingIndicator title={t('stockAnalysis.community.chat')} iconOnly/>}

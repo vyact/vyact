@@ -1,3 +1,4 @@
+import vyactLogo from '../../assets/vyact-icon.png';
 import {GLOBAL_INDICATOR_SYMBOLS, GLOBAL_INDICATOR_KEYS, supportsStockFinancials} from '../../utils/stockSymbols';
 import {getReasoningRequestValue} from '../../utils/reasoning';
 import StockContextPeriod from './StockContextPeriod';
@@ -320,7 +321,16 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
                         if (list.scrollHeight - list.scrollTop - list.clientHeight <= 8) followLatest.current = true;
                         previousScrollTop.current = list.scrollTop;
                     }} role="log" aria-label={tr('ai')} aria-busy={busy}>
-                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? `${scopeType}Hint` : 'hint')}</p></div>}
+                    {!messages.length && !busy && <div className="stock-discussion-empty">
+                        <img className="stock-discussion-empty-logo" src={vyactLogo} alt=""/>
+                        <h2>{tr('welcome')}</h2>
+                        <p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? `${scopeType}Hint` : 'hint')}</p>
+                        <button type="button" className="stock-discussion-empty-shortcuts" onClick={() => {
+                            window.dispatchEvent(new KeyboardEvent('keydown', {key: '/', code: 'Slash', ctrlKey: true, cancelable: true}));
+                        }}>
+                            {t('shortcutModal.showShortcuts')} <kbd>Ctrl / ⌘ + /</kbd>
+                        </button>
+                    </div>}
                     {messages.map((message, index) => preparation && busy && index === messages.length - 1 && message.role === 'assistant'
                         ? <StockChatPreparation key={message.id ?? index} {...preparation}/> : <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
                         <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}

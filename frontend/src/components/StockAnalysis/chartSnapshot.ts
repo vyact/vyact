@@ -1,5 +1,7 @@
 import type {ChartInterval} from './chartData';
 
+export const MAX_CHAT_IMAGE_DIMENSION = 2048;
+
 export interface ChartSnapshotContext {
     symbol: string;
     name: string;

@@ -1,3 +1,4 @@
+import {getTopmostModalOverlay} from '../ModalOverlay/modalStack';
 import ImageViewer from '../../ImageViewer/ImageViewer';
 import useObjectUrl from '../useObjectUrl';
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
@@ -53,15 +54,18 @@ function sendStockScope(frame: HTMLIFrameElement | null, scope: StockChatScope, 
 
 function ignoreChartIndexChange() {}
 
-function sendChartAvailability(frame: HTMLIFrameElement | null, origin: string, available: boolean) {
-    frame?.contentWindow?.postMessage({type: 'vyact:community-chart-availability', available}, origin);
+type ChartAttachmentKind = 'chart' | 'sector-map';
+
+function sendChartAvailability(frame: HTMLIFrameElement | null, origin: string, available: boolean, kind: ChartAttachmentKind) {
+    frame?.contentWindow?.postMessage({type: 'vyact:community-chart-availability', available, kind}, origin);
 }
 
-export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart}: {
+export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart, chartAttachmentKind = 'chart'}: {
     entry?: CommunityChatEntry;
     title: string;
     unavailableMessage: string;
     loadingIndicator?: ReactNode;
+    chartAttachmentKind?: ChartAttachmentKind;
     captureChart?: () => Promise<Blob | null>;
     stockPicker?: (enabled: boolean, scope: StockChatScope, selectScope: (scope: StockChatScope) => void, accountMenu: ReactNode) => ReactNode;
 }) {
@@ -80,13 +84,13 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         setChartImage(undefined);
         if (!iframe.current?.closest('[hidden], [inert]')) iframe.current?.focus();
     }, []);
-    const chartCapture = useRef(captureChart);
+    const chartCapture = useRef({capture: captureChart, kind: chartAttachmentKind});
     useEffect(() => {
-        chartCapture.current = captureChart;
+        chartCapture.current = {capture: captureChart, kind: chartAttachmentKind};
         if (entry === 'stock-analysis' && COMMUNITY_URL) {
-            sendChartAvailability(iframe.current, new URL(COMMUNITY_URL).origin, !!captureChart);
+            sendChartAvailability(iframe.current, new URL(COMMUNITY_URL).origin, !!captureChart, chartAttachmentKind);
         }
-    }, [captureChart, entry]);
+    }, [captureChart, chartAttachmentKind, entry]);
     const [stockScope, setStockScope] = useState(readStockChatScope);
     const stockScopeRef = useRef(stockScope);
     const restoredStockScope = useRef(false);
@@ -152,7 +156,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const syncFrame = () => {
             sendTheme();
             requestPickerStatus();
-            if (entry === 'stock-analysis') sendChartAvailability(iframe.current, origin, !!chartCapture.current);
+            if (entry === 'stock-analysis') sendChartAvailability(iframe.current, origin, !!chartCapture.current.capture, chartCapture.current.kind);
         };
         const onFrameLoad = () => {
             restoredStockScope.current = false;
@@ -172,7 +176,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 return;
             }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-status') {
-                sendChartAvailability(frame, origin, !!chartCapture.current);
+                sendChartAvailability(frame, origin, !!chartCapture.current.capture, chartCapture.current.kind);
                 return;
             }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-request') {
@@ -181,7 +185,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 const reply = (chart: Blob | null) => frame.contentWindow?.postMessage({
                     type: 'vyact:community-chart-result', requestId, chart,
                 }, origin);
-                const capture = chartCapture.current;
+                const {capture} = chartCapture.current;
                 if (capture && !frame.closest('[hidden], [inert]')) void capture().then(reply, () => reply(null));
                 else reply(null);
                 return;
@@ -189,8 +193,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-stock-scope-selected') {
                 const {market, symbol, stockName} = event.data;
                 const validMarket = STOCK_MARKETS.find(candidate => candidate === market);
-                if (!validMarket || typeof symbol !== 'string' || !STOCK_SYMBOL.test(symbol)) return;
-                const scope = {market: validMarket, symbol, stockName: typeof stockName === 'string' ? stockName : undefined};
+                if (!validMarket || (symbol !== undefined && (typeof symbol !== 'string' || !STOCK_SYMBOL.test(symbol)))) return;
+                const scope = {market: validMarket, symbol, stockName: symbol && typeof stockName === 'string' ? stockName : undefined};
                 stockScopeRef.current = scope;
                 setStockScope(scope);
                 saveStockChatScope(scope);
@@ -239,6 +243,13 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                     avatarSrc: resolveAvatar(avatarPath, origin),
                     avatarEditLabel: typeof avatarEditLabel === 'string' ? avatarEditLabel : undefined,
                 } : null);
+                return;
+            }
+            if (event.data?.type === 'vyact:community-shortcut-dismiss') {
+                if (document.activeElement === frame && !frame.closest('[hidden], [inert]')
+                    && getTopmostModalOverlay()?.classList.contains('shortcut-modal-overlay')) {
+                    window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', cancelable: true}));
+                }
                 return;
             }
             if (event.data?.type !== SHORTCUT_MESSAGE || document.activeElement !== frame

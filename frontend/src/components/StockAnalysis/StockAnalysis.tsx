@@ -108,6 +108,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const updateGroupSectors = useCallback((sectors: MarketSector[]) => setGroupSectorScope({market, sectors}), [market]);
     const groupSectors = groupSectorScope.market === market ? groupSectorScope.sectors : [];
     const [query, setQuery] = useState('');
+    const [captureMap, setCaptureMap] = useState<(() => HTMLCanvasElement | null) | null>(null);
+    const registerMapCapture = useCallback((capture: (() => HTMLCanvasElement | null) | null) => {
+        setCaptureMap(() => capture);
+    }, []);
     const captureChart = useRef<(() => ChartSnapshot) | null>(null);
     const [comparisonTarget, setComparisonTarget] = useState<HTMLDivElement | null>(null);
     const [listView, setListView] = useState<'all' | 'watchlist' | 'groups'>('all');
@@ -362,7 +366,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
-                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
+                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onCaptureChange={registerMapCapture} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} aria-keyshortcuts="Meta+ArrowLeft Control+ArrowLeft" onClick={returnToOverview}><ArrowLeft size={16} aria-hidden="true"/></button>
                     <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p>
@@ -405,6 +409,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             </div>}
         </main>
         <StockDiscussionPanel market={active ? instrumentMarket : market} directory={symbols}
+            captureMap={!active && listView !== 'groups' ? captureMap : null}
             captureChart={active && detailTab === 'chart' && rows?.length ? captureChart : undefined}
             renderAnalysis={visibility => {
                 if (active) return <StockDiscussionSidebar {...visibility} key={`${market}:${active.symbol}`}
