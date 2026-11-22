@@ -34,7 +34,7 @@ const STOCK_COMMUNITY_SHORTCUTS = new Map([
 
 export type CommunityChatEntry = 'main' | 'stock-analysis' | 'novel-studio';
 
-const THEME_TOKENS = ['--bg', '--bg-secondary', '--surface', '--surface2', '--border', '--accent', '--text', '--muted', '--on-accent', '--warn', '--overlay', '--success', '--action-delete'];
+const THEME_TOKENS = ['--bg', '--bg-secondary', '--surface', '--surface2', '--border', '--accent', '--info', '--text', '--muted', '--on-accent', '--warn', '--overlay', '--success', '--action-delete'];
 const AVATAR_CDN_ORIGIN = 'https://media.vyact.vyvow.com';
 function resolveAvatar(path: unknown, origin: string) {
     if (typeof path !== 'string') return;
