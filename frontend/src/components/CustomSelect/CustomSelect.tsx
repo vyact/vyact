@@ -42,6 +42,7 @@ interface CustomSelectProps {
     emptyState?: React.ReactNode;
     ariaLabel?: string;
     portal?: boolean;
+    portalWidthBoundaryRef?: React.RefObject<HTMLElement | null>;
     onOpen?: () => void;
     header?: React.ReactNode;
     afterSearch?: React.ReactNode;
@@ -97,6 +98,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        emptyState,
                                                        ariaLabel,
                                                        portal = false,
+                                                       portalWidthBoundaryRef,
                                                        onOpen,
                                                        header,
                                                        afterSearch,
@@ -192,20 +194,31 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
         const updateDropdownPlacement = () => {
             const triggerRect = wrapRef.current?.getBoundingClientRect();
-            const dropdownHeight = dropdownRef.current?.getBoundingClientRect().height ?? 0;
-            if (!triggerRect || !dropdownHeight) return;
+            const dropdownRect = dropdownRef.current?.getBoundingClientRect();
+            if (!triggerRect || !dropdownRect?.height) return;
+            const dropdownHeight = dropdownRect.height;
 
             const spaceBelow = window.innerHeight - triggerRect.bottom;
             const spaceAbove = triggerRect.top;
             const nextPlacement = dropdownHeight + 4 > spaceBelow && spaceAbove > spaceBelow ? 'up' : 'down';
             setDropdownPlacement(nextPlacement);
             if (portal) {
+                const boundary = portalWidthBoundaryRef?.current;
+                let maxWidth: number | undefined;
+                if (boundary) {
+                    const bounds = boundary.getBoundingClientRect();
+                    const {paddingRight} = getComputedStyle(boundary);
+                    const rightEdge = Math.min(window.innerWidth, bounds.right - parseFloat(paddingRight));
+                    maxWidth = Math.max(0, rightEdge - triggerRect.left);
+                }
                 setPortalPosition({
                     left: triggerRect.left,
                     top: nextPlacement === 'up'
                         ? Math.max(4, triggerRect.top - dropdownHeight - 4)
                         : triggerRect.bottom + 4,
-                    width: triggerRect.width,
+                    width: boundary ? 'max-content' : triggerRect.width,
+                    minWidth: maxWidth === undefined ? undefined : Math.min(triggerRect.width, maxWidth),
+                    maxWidth,
                 });
             }
         };
@@ -214,14 +227,19 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             if (event.target instanceof Node && !event.target.contains(wrapRef.current)) return;
             updateDropdownPlacement();
         };
+        const boundary = portal ? portalWidthBoundaryRef?.current : null;
+        const observer = boundary ? new ResizeObserver(updateDropdownPlacement) : null;
+        if (boundary && observer) observer.observe(boundary);
+        if (observer && dropdownRef.current) observer.observe(dropdownRef.current);
         updateDropdownPlacement();
         window.addEventListener('resize', updateDropdownPlacement);
         window.addEventListener('scroll', handleScroll, true);
         return () => {
+            observer?.disconnect();
             window.removeEventListener('resize', updateDropdownPlacement);
             window.removeEventListener('scroll', handleScroll, true);
         };
-    }, [open, filtered.length, portal]);
+    }, [open, filtered.length, portal, portalWidthBoundaryRef]);
 
     const handleSelect = (optValue: string) => {
         if (disabled) return;

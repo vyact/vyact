@@ -8,8 +8,8 @@
 .community-avatar-trigger {
     display: grid;
     place-items: center;
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     padding: 0;
     border: 1px solid var(--border);
     border-radius: 50%;
@@ -22,6 +22,7 @@
 .community-avatar-trigger[aria-expanded="true"] {background: var(--surface2);}
 .community-avatar-popover {
     position: absolute;
+    user-select: none;
     inset: calc(100% + 6px) 0 auto auto;
     display: grid;
     width: max-content;
@@ -71,3 +72,15 @@
 .community-avatar-action:focus-visible {background: var(--surface2);}
 .community-avatar-popover .community-avatar-logout {gap: 12px; margin-top: 3px; min-height: 34px; padding: 6px 12px; text-align: start;}
 .community-avatar-popover .community-avatar-logout > span {display: inline;}
+
+.community-avatar-popover .community-avatar-withdraw {color: var(--danger, var(--text));}
+
+.community-avatar-withdraw-toggle {
+    justify-content: center;
+    min-height: 26px;
+    list-style: none;
+    color: var(--muted);
+}
+.community-avatar-withdraw-toggle::-webkit-details-marker {display: none;}
+.community-avatar-withdraw-details[open] .community-avatar-withdraw-toggle svg {transform: rotate(180deg);}
+.community-avatar-withdraw-details .community-avatar-withdraw {width: 100%;}

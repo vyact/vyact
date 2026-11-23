@@ -1,13 +1,15 @@
 import {useEffect, useRef, useState} from 'react';
-import {Camera, PencilLine, UserRound} from 'lucide-react';
+import {Camera, ChevronDown, PencilLine, UserRound, UserRoundMinus} from 'lucide-react';
 import WorkspaceExitButton from '../WorkspaceLayout/WorkspaceExitButton';
 
-export default function CommunityAvatarMenu({nickname, nicknameEditLabel, avatarSrc, avatarEditLabel, logoutLabel, onEditNickname, onEditAvatar, onLogout}: {
+export default function CommunityAvatarMenu({nickname, nicknameEditLabel, avatarSrc, avatarEditLabel, logoutLabel, withdrawLabel, onEditNickname, onEditAvatar, onWithdraw, onLogout}: {
     nickname: string;
     nicknameEditLabel?: string;
     avatarSrc?: string;
     avatarEditLabel?: string;
     logoutLabel: string;
+    withdrawLabel?: string;
+    onWithdraw: () => void;
     onEditAvatar: () => void;
     onEditNickname: () => void;
     onLogout: () => void;
@@ -51,6 +53,16 @@ export default function CommunityAvatarMenu({nickname, nicknameEditLabel, avatar
             </button>}
             <WorkspaceExitButton className="community-avatar-logout" label={logoutLabel}
                 onClick={() => {setOpen(false); onLogout();}}/>
+            {withdrawLabel && <details className="community-avatar-withdraw-details">
+                <summary className="community-avatar-action community-avatar-withdraw-toggle" aria-label={withdrawLabel}>
+                    <ChevronDown size={15} aria-hidden="true"/>
+                </summary>
+                <button type="button" className="community-avatar-action community-avatar-withdraw"
+                    onClick={() => {setOpen(false); onWithdraw();}}>
+                    <span className="community-avatar-action-icon" aria-hidden="true"><UserRoundMinus size={14} strokeWidth={1.8}/></span>
+                    <span className="community-avatar-action-label">{withdrawLabel}</span>
+                </button>
+            </details>}
         </div>}
     </div>;
 }

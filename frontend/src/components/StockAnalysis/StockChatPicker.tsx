@@ -1,4 +1,4 @@
-import {useEffect, type ReactNode} from 'react';
+import {useEffect, useRef, type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
@@ -17,6 +17,7 @@ export default function StockChatPicker({localMarket, directory, enabled, scope,
     scope: StockChatScope;
     onScopeChange: (scope: StockChatScope) => void;
 }) {
+    const pickerRef = useRef<HTMLDivElement>(null);
     const {t, i18n} = useTranslation('main');
     const selectedSymbol = scope.symbol ?? '';
     const hasMarket = !!scope.market;
@@ -35,13 +36,14 @@ export default function StockChatPicker({localMarket, directory, enabled, scope,
     if (selectedSymbol && !selectedName) {
         instruments.unshift({value: selectedSymbol, name: scope.stockName ?? selectedSymbol});
     }
-    return <div className="stock-community-picker">
+    return <div ref={pickerRef} className="stock-community-picker">
         <StockReferenceScopeSelect value={scope.market || 'global'} globalLabel={t('stockAnalysis.community.allMarkets')}
-            portal showTriggerIcon disabled={!enabled} onChange={value => {
+            portal compactTrigger portalWidthBoundaryRef={pickerRef} disabled={!enabled} onChange={value => {
                 const nextMarket = value === 'global' ? '' : value;
                 if (nextMarket !== scope.market) onScopeChange({market: nextMarket});
             }}/>
         <CustomSelect optionsPageSize={100} unfilteredOptionsLimit={UNFILTERED_INSTRUMENT_LIMIT} value={selectedSymbol} searchable portal clearable onClear={() => onScopeChange({market})} disabled={!enabled || !hasMarket} ariaLabel={label} searchPlaceholder={label}
+            portalWidthBoundaryRef={pickerRef}
             placeholder={hasMarket ? label : t('stockAnalysis.community.selectMarketFirst')}
             options={instruments.map(({value, name}) => ({value, label: name === value ? value : `${name} · ${value}`}))}
             onChange={symbol => {

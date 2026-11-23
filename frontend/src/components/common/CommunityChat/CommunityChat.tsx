@@ -81,7 +81,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const [frameReady, setFrameReady] = useState(false);
     const [frameTimedOut, setFrameTimedOut] = useState(false);
     const [picker, setPicker] = useState({visible: false, enabled: false});
-    const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string} | null>(null);
+    const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string; withdrawLabel?: string} | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
     const [chartImage, setChartImage] = useState<Blob>();
     const chartImageUrl = useObjectUrl(chartImage);
@@ -286,7 +286,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-stock-picker') {
                 if (event.data.ready !== false) setFrameReady(true);
                 setPicker({visible: event.data.visible === true, enabled: event.data.enabled === true});
-                const {nickname, nicknameEditLabel, avatarPath, avatarEditLabel, logoutLabel} = event.data;
+                const {nickname, nicknameEditLabel, avatarPath, avatarEditLabel, logoutLabel, withdrawLabel} = event.data;
                 if (typeof nickname !== 'string') restoredStockScope.current = false;
                 if (event.data.enabled === true && !restoredStockScope.current) {
                     restoredStockScope.current = true;
@@ -294,6 +294,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 }
                 setAccount(typeof nickname === 'string' && typeof logoutLabel === 'string' ? {
                     nickname, logoutLabel,
+                    withdrawLabel: typeof withdrawLabel === 'string' ? withdrawLabel : undefined,
                     nicknameEditLabel: typeof nicknameEditLabel === 'string' ? nicknameEditLabel : undefined,
                     avatarSrc: resolveAvatar(avatarPath, origin),
                     avatarEditLabel: typeof avatarEditLabel === 'string' ? avatarEditLabel : undefined,
@@ -354,6 +355,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             iframe.current?.focus();
             iframe.current?.contentWindow?.postMessage({type: 'vyact:community-edit-avatar'}, url.origin);
         }}
+        onWithdraw={() => iframe.current?.contentWindow?.postMessage({type: 'vyact:community-withdraw'}, url.origin)}
         onLogout={() => iframe.current?.contentWindow?.postMessage({type: 'vyact:community-logout'}, url.origin)}/>;
     const waitingForFrame = hasLoadingIndicator && !frameReady;
     return <>

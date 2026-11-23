@@ -1,4 +1,4 @@
-"""Periodically import Vyact product releases from the Vyvow API."""
+"""Periodically import Vyact product releases from the Vyact Community API."""
 import asyncio
 from datetime import datetime, timedelta, timezone
 import os
@@ -16,7 +16,7 @@ PRODUCT_RELEASE_POLL_INTERVAL = timedelta(hours=24)
 PRODUCT_RELEASE_SCHEDULER_INTERVAL_SECONDS = 60 * 60
 PRODUCT_RELEASE_REQUEST_TIMEOUT_SECONDS = 10
 PRODUCT_RELEASE_API_URL = (
-    f"{os.getenv('VYVOW_API_BASE_URL', 'https://api.vyvow.com').rstrip('/')}"
+    f"{os.getenv('VYACT_COMMUNITY_API_BASE_URL', 'https://api.vyact.vyvow.com').rstrip('/')}"
     "/api/vyact/releases"
 )
 PRODUCT_RELEASE_NOTIFICATION_TYPE = "product_release"
