@@ -44,6 +44,7 @@ from services.google_workspace.gmail import (
     load_mail_workspace_sync,
     list_mail_messages_sync,
     list_mail_threads_sync,
+    parse_email_addresses,
     visible_mail_thread_messages,
 )
 from services.google_workspace.errors import is_google_rate_limited
@@ -604,10 +605,6 @@ def _headers(message: dict) -> dict[str, str]:
     }
 
 
-def _email_addresses(header_value: str) -> list[dict[str, str]]:
-    return [{"name": name, "email": email} for name, email in getaddresses([header_value]) if email]
-
-
 def _decode_body(data: str) -> str:
     return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
 
@@ -732,9 +729,9 @@ def _thread_message_detail(message: dict, service) -> dict:
         "to": headers.get("To", ""),
         "cc": headers.get("Cc", ""),
         "bcc": headers.get("Bcc", ""),
-        "toAddresses": _email_addresses(headers.get("To", "")),
-        "ccAddresses": _email_addresses(headers.get("Cc", "")),
-        "bccAddresses": _email_addresses(headers.get("Bcc", "")),
+        "toAddresses": parse_email_addresses(headers.get("To", "")),
+        "ccAddresses": parse_email_addresses(headers.get("Cc", "")),
+        "bccAddresses": parse_email_addresses(headers.get("Bcc", "")),
         "subject": headers.get("Subject", ""),
         "date": headers.get("Date", ""),
         "body": plain_body or html_body,
@@ -1036,9 +1033,9 @@ async def get_mail_message(message_id: str, label: str = "INBOX"):
         "locationLabel": location_label,
         "labelIds": thread_label_ids or message.get("labelIds", []),
         "from": headers.get("From", ""),
-        "to": _email_addresses(headers.get("To", "")),
-        "cc": _email_addresses(headers.get("Cc", "")),
-        "bcc": _email_addresses(headers.get("Bcc", "")),
+        "to": parse_email_addresses(headers.get("To", "")),
+        "cc": parse_email_addresses(headers.get("Cc", "")),
+        "bcc": parse_email_addresses(headers.get("Bcc", "")),
         "accountEmail": account_email,
         "subject": headers.get("Subject", ""),
         "date": headers.get("Date", ""),

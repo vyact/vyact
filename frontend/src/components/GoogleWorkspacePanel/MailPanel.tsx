@@ -27,7 +27,7 @@ import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/Knowle
 import EmailEditor, {type EmailEditorHandle} from './LazyEmailEditor';
 
 type MailParticipant = MailAddress & {isMe: boolean};
-type MailItem = {id: string; threadId?: string; labelIds?: string[]; from: string; participants?: MailParticipant[]; messageCount?: number; subject: string; date: string; snippet: string; isUnread: boolean; isStarred: boolean; hasAttachments?: boolean};
+type MailItem = {id: string; threadId?: string; labelIds?: string[]; from: string; to?: MailAddress[]; threadRecipients?: MailAddress[]; participants?: MailParticipant[]; messageCount?: number; subject: string; date: string; snippet: string; isUnread: boolean; isStarred: boolean; hasAttachments?: boolean};
 type MailAddress = {name: string; email: string};
 type MailThreadMessage = {id: string; labelIds?: string[]; from: string; to: string; cc: string; bcc?: string; toAddresses?: MailAddress[]; ccAddresses?: MailAddress[]; bccAddresses?: MailAddress[]; subject: string; date: string; body: string; htmlBody?: string; attachments?: MailAttachment[]};
 type MailDetail = {locationLabel?: string; id: string; threadId?: string; labelIds?: string[]; from: string; to: MailAddress[]; cc: MailAddress[]; bcc: MailAddress[]; accountEmail: string; subject: string; date: string; body: string; htmlBody?: string; attachments: MailAttachment[]; threadMessages?: MailThreadMessage[]};
@@ -608,7 +608,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     selectedMessageId?: string | null;
     onAttachFilesToChat?: (files: File[]) => Promise<void> | void;
 }) {
-    const {api, provider} = useWorkspace();
+    const {api, provider, accountEmail} = useWorkspace();
     const {t, i18n} = useTranslation('main');
     const [labels, setLabels] = useState<MailLabel[]>([]);
     const [mailLoadError, setMailLoadError] = useState('');
@@ -639,6 +639,13 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     const [selected, setSelected] = useState<MailDetail | null>(null);
     const mailNoteId = (mail: {id: string; threadId?: string}) => provider === 'google' ? mail.threadId || mail.id : mail.id;
     const mailNotes = useMailNotes([...mails.map(mailNoteId), ...(selected ? [mailNoteId(selected)] : [])]);
+    const renderListNoteButton = (mail: MailItem) => {
+        const senders = mail.participants?.filter(participant => !participant.isMe) ?? [parseMailAddress(mail.from)];
+        const recipients = mail.threadRecipients ?? mail.to ?? [];
+        return mailNotes.button({
+            id: mailNoteId(mail), subject: mail.subject, accountEmail, participants: [...senders, ...recipients],
+        });
+    };
     const [handledNotificationMessageId, setHandledNotificationMessageId] = useState<string | null>(null);
     const isOpeningNotification = Boolean(selectedMessageId && selectedMessageId !== handledNotificationMessageId);
     const [selectedKnowledgeSourceId, setSelectedKnowledgeSourceId] = useState('');
@@ -2250,6 +2257,13 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                 htmlBody: selected.htmlBody,
                 attachments: selected.attachments,
             }];
+        const noteParticipants = threadMessages
+            .filter(message => label === 'DRAFT' || !isDraftMail(message))
+            .flatMap(message => [parseMailAddress(message.from), ...(message.toAddresses || [])]);
+        const noteButton = mailNotes.button({
+            id: mailNoteId(selected), subject: selected.subject, participants: noteParticipants,
+            accountEmail: selected.accountEmail || accountEmail,
+        });
         const toggleThreadMessage = (messageId: string) => {
             setExpandedThreadMessageIds(current => {
                 const next = new Set(current);
@@ -2285,7 +2299,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                     <div className="gwp-detail-actions">
                         <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
                         <div className="gwp-detail-icon-group"><KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId, getKnowledgeThreadSnapshot(selected))).source_id})} onOpen={() => setMailAttachMenuId(null)} onActionChange={setKnowledgeCollectionAction}/>
-                        {mailNotes.button({id: mailNoteId(selected), subject: selected.subject})}<button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
+                        {noteButton}<button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
                         </div><button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy || !selectedActionMail}><Forward aria-hidden="true" size={16}/></button>
                         <button className="gwp-primary" onClick={replyToSelectedMail} disabled={isMailActionBusy || !selectedActionMail}>{t('googleWorkspace.reply')}</button>
                     </div>
@@ -2324,7 +2338,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                 <div className="gwp-detail-actions">
                     <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
                     <div className="gwp-detail-icon-group"><KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId, getKnowledgeThreadSnapshot(selected))).source_id})} onOpen={() => setMailAttachMenuId(null)} onActionChange={setKnowledgeCollectionAction}/>
-                    {mailNotes.button({id: mailNoteId(selected), subject: selected.subject})}<button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
+                    {noteButton}<button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
                     </div><button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy || !selectedActionMail}><Forward aria-hidden="true" size={16}/></button>
                     <button className="gwp-primary" onClick={replyToSelectedMail} disabled={isMailActionBusy || !selectedActionMail}>{t('googleWorkspace.reply')}</button>
                 </div>
@@ -2435,7 +2449,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                     <div className="gwp-mail-search-actions">
                     <MailSearch key={searchScope} query={mailQuery} disabled={isMailActionBusy}
                         onSearch={query => setMailSearch({scope: searchScope, query})}/>
-                    <button className="gwp-refresh" aria-label={t('googleWorkspace.refresh')} onClick={refreshMails} disabled={mailLoading || isMailActionBusy}><RefreshCw aria-hidden="true" size={18} className={mailLoading ? 'gwp-spin' : ''}/></button></div></div>{mailLoadError ? <WorkspaceLoadError message={mailLoadError} onRetry={() => void loadMails()} busy={mailLoading || loadingMoreMails}/> : mailLoading && mails.length === 0 ? <MailListSkeleton/> : mails.length === 0 && (!mailQuery || !nextMailPageToken) ? <div className="gwp-mail-empty" role="status"><Mail aria-hidden="true" size={30}/><p>{t(mailQuery ? 'googleWorkspace.mailSearch.empty' : 'googleWorkspace.emptyMailbox')}</p></div> : <div className="gwp-mail-scroll" onScroll={event => { const target = event.currentTarget; if (!mailQuery && nextMailPageToken && !mailLoading && !loadingMoreMails && !isMailActionBusy && target.scrollHeight - target.scrollTop - target.clientHeight < 96) void loadMails(nextMailPageToken); }}><div className="gwp-mail-list">{mails.map(mail => <div key={mail.threadId || mail.id} className={`gwp-mail-row${mail.isUnread ? ' unread' : ''}${provider === 'microsoft' || label === 'TRASH' ? ' no-star' : ''}`}><input className="common-checkbox" aria-label={t('googleWorkspace.selectMail')} type="checkbox" checked={selectedMailIds.has(mail.id)} onChange={() => toggleMailSelection(mail.id)} disabled={isMailActionBusy}/>{provider === 'google' && label !== 'TRASH' && <button className={`gwp-mail-star${mail.isStarred ? ' active' : ''}`} aria-label={t(mail.isStarred ? 'googleWorkspace.removeStar' : 'googleWorkspace.addStar')} aria-pressed={mail.isStarred} onClick={() => void toggleMailStar(mail)} disabled={isMailActionBusy || updatingStarMailIds.has(mail.id)}><Star aria-hidden="true" size={17}/></button>}<button className="gwp-mail-open" onClick={() => void openMail(mail.id)} disabled={isMailActionBusy}><strong>{renderMailParticipants(mail)}</strong><span className="gwp-mail-subject-line">{renderAppliedLabels(mail.labelIds)}<span className="gwp-mail-subject">{mail.subject || t('googleWorkspace.noSubject')}</span>{mail.hasAttachments && <Paperclip className="gwp-mail-attachment-indicator" aria-hidden="true" size={15}/>}</span><small>{mail.snippet}</small></button><div className="gwp-mail-row-meta"><time dateTime={mail.date}>{formatMailDate(mail.date, i18n.resolvedLanguage || i18n.language)}</time>{mailNotes.button({id: mailNoteId(mail), subject: mail.subject})}</div></div>)}</div>{mailQuery && nextMailPageToken && !loadingMoreMails &&
+                    <button className="gwp-refresh" aria-label={t('googleWorkspace.refresh')} onClick={refreshMails} disabled={mailLoading || isMailActionBusy}><RefreshCw aria-hidden="true" size={18} className={mailLoading ? 'gwp-spin' : ''}/></button></div></div>{mailLoadError ? <WorkspaceLoadError message={mailLoadError} onRetry={() => void loadMails()} busy={mailLoading || loadingMoreMails}/> : mailLoading && mails.length === 0 ? <MailListSkeleton/> : mails.length === 0 && (!mailQuery || !nextMailPageToken) ? <div className="gwp-mail-empty" role="status"><Mail aria-hidden="true" size={30}/><p>{t(mailQuery ? 'googleWorkspace.mailSearch.empty' : 'googleWorkspace.emptyMailbox')}</p></div> : <div className="gwp-mail-scroll" onScroll={event => { const target = event.currentTarget; if (!mailQuery && nextMailPageToken && !mailLoading && !loadingMoreMails && !isMailActionBusy && target.scrollHeight - target.scrollTop - target.clientHeight < 96) void loadMails(nextMailPageToken); }}><div className="gwp-mail-list">{mails.map(mail => <div key={mail.threadId || mail.id} className={`gwp-mail-row${mail.isUnread ? ' unread' : ''}${provider === 'microsoft' || label === 'TRASH' ? ' no-star' : ''}`}><input className="common-checkbox" aria-label={t('googleWorkspace.selectMail')} type="checkbox" checked={selectedMailIds.has(mail.id)} onChange={() => toggleMailSelection(mail.id)} disabled={isMailActionBusy}/>{provider === 'google' && label !== 'TRASH' && <button className={`gwp-mail-star${mail.isStarred ? ' active' : ''}`} aria-label={t(mail.isStarred ? 'googleWorkspace.removeStar' : 'googleWorkspace.addStar')} aria-pressed={mail.isStarred} onClick={() => void toggleMailStar(mail)} disabled={isMailActionBusy || updatingStarMailIds.has(mail.id)}><Star aria-hidden="true" size={17}/></button>}<button className="gwp-mail-open" onClick={() => void openMail(mail.id)} disabled={isMailActionBusy}><strong>{renderMailParticipants(mail)}</strong><span className="gwp-mail-subject-line">{renderAppliedLabels(mail.labelIds)}<span className="gwp-mail-subject">{mail.subject || t('googleWorkspace.noSubject')}</span>{mail.hasAttachments && <Paperclip className="gwp-mail-attachment-indicator" aria-hidden="true" size={15}/>}</span><small>{mail.snippet}</small></button><div className="gwp-mail-row-meta"><time dateTime={mail.date}>{formatMailDate(mail.date, i18n.resolvedLanguage || i18n.language)}</time>{renderListNoteButton(mail)}</div></div>)}</div>{mailQuery && nextMailPageToken && !loadingMoreMails &&
                     <button type="button" className="gwp-mail-search-more" disabled={mailLoading || isMailActionBusy}
                         onClick={() => void loadMails(nextMailPageToken)}>{t('googleWorkspace.loadMore')}</button>}
                     {loadingMoreMails && <div className="gwp-mail-loading-more"><LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/><span>{t('googleWorkspace.loadingMore')}</span></div>}</div>}</>}

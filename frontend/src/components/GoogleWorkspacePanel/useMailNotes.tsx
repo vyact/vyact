@@ -10,7 +10,7 @@ import {notifyWorkspaceError} from '../../utils/workspaceError';
 import './mailNotes.css';
 
 type Note = {content: string; updated_at: string};
-type Target = {id: string; subject: string};
+type Target = {id: string; subject: string; accountEmail: string; participants: {email: string}[]};
 const MAX_NOTE_LENGTH = 20_000;
 const LOOKUP_BATCH_SIZE = 200;
 
@@ -63,6 +63,13 @@ export function useMailNotes(ids: string[]) {
         return () => { cancelled = true; };
     }, [api, accountId, scope, lookupKey, reload]);
     const stored = target ? notes[target.id] : undefined;
+    const participantEmails = new Map<string, string>();
+    const ownEmail = target?.accountEmail.trim().toLowerCase();
+    for (const participant of target?.participants ?? []) {
+        const email = participant.email.trim();
+        const key = email.toLowerCase();
+        if (key && key !== ownEmail && !participantEmails.has(key)) participantEmails.set(key, email);
+    }
     const close = () => {
         if (saving) return;
         if (draft !== (stored?.content || '')) setDiscardOpen(true);
@@ -87,7 +94,20 @@ export function useMailNotes(ids: string[]) {
     }}><NotebookPen size={18} strokeWidth={1.8} aria-hidden="true"/></button>;
     const modal = target && <ModalOverlay className="gwp-note-overlay" captureEscape onClose={close} closeOnBackdrop={!saving} aria-label={t('googleWorkspace.mailNote.title')}>
         <section className="gwp-note-modal">
-            <header><div className="gwp-note-heading"><NotebookPen size={21} aria-hidden="true"/><div><h3>{t('googleWorkspace.mailNote.title')}</h3><p>{target.subject || t('googleWorkspace.noSubject')}</p></div></div><ModalCloseButton onClick={close} disabled={saving}/></header>
+            <header>
+                <div className="gwp-note-heading">
+                    <NotebookPen size={21} aria-hidden="true"/>
+                    <div>
+                        <h3>{t('googleWorkspace.mailNote.title')}</h3>
+                        <p>{target.subject || t('googleWorkspace.noSubject')}</p>
+                        {participantEmails.size > 0 && <p className="gwp-note-recipients">
+                            <strong>{t('googleWorkspace.mailNote.participants')}</strong>
+                            <span>{[...participantEmails.values()].join(', ')}</span>
+                        </p>}
+                    </div>
+                </div>
+                <ModalCloseButton onClick={close} disabled={saving}/>
+            </header>
             <div className="gwp-note-body">{editing ? <><label htmlFor="mail-note-content">{t('googleWorkspace.mailNote.label')}</label><textarea id="mail-note-content" autoFocus value={draft} maxLength={MAX_NOTE_LENGTH} disabled={saving} onChange={event => setDraft(event.target.value)} placeholder={t('googleWorkspace.mailNote.placeholder')}/></> : <NoteContent content={stored?.content || ''}/>}</div>
             <footer className="modal-action-footer"><small>{stored?.updated_at ? t('googleWorkspace.mailNote.updated', {date: new Date(stored.updated_at).toLocaleString(i18n.resolvedLanguage || i18n.language)}) : null}</small><div className="gwp-note-actions"><button type="button" className="modal-action-cancel" onClick={close} disabled={saving}>{t(editing ? 'common:cancel' : 'common:close')}</button>{editing ? <button type="button" className="modal-action-submit" disabled={saving || draft === (stored?.content || '')} onClick={() => void save()}>{saving ? <LoaderCircle className="gwp-spin" size={16}/> : <Save size={16}/>} {t('googleWorkspace.mailNote.save')}</button> : <button type="button" className="modal-action-submit" onClick={() => setEditing(true)}><Pencil size={16}/>{t('googleWorkspace.mailNote.edit')}</button>}</div></footer>
         </section>

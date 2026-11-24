@@ -128,6 +128,7 @@
       "empty": "没有匹配的邮件"
     },
     "mailNote": {
+      "participants": "其他参与者",
       "title": "邮件备注",
       "add": "添加备注",
       "view": "查看备注",

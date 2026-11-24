@@ -9,6 +9,17 @@
     position: relative;
 }
 
+.chat-workspace-panel {
+    flex: none;
+    min-width: 0;
+    min-height: 0;
+    background: var(--surface);
+}
+
+@media (max-width: 680px) {
+    .chat-workspace-panel { width: 100% !important; }
+}
+
 .conversation-navigator {
     position: absolute;
     top: 50%;

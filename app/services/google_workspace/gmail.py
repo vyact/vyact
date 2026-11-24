@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from email.utils import parseaddr
+from email.utils import getaddresses, parseaddr
 from pathlib import Path
 
 from googleapiclient.errors import HttpError
@@ -57,6 +57,10 @@ def _metadata_headers(message: dict) -> dict[str, str]:
         for header in message.get("payload", {}).get("headers", [])
         if header.get("name")
     }
+
+
+def parse_email_addresses(header_value: str) -> list[dict[str, str]]:
+    return [{"name": name, "email": email} for name, email in getaddresses([header_value]) if email]
 
 
 def _decode_mail_snippet(value: str) -> str:
@@ -253,6 +257,12 @@ def _format_mail_threads(
             "threadId": thread["id"],
             "from": latest_headers.get("from", ""),
             "participants": participants,
+            "threadRecipients": [
+                address
+                for message, headers in zip(thread_messages, thread_headers)
+                if "DRAFT" not in message.get("labelIds", []) or "DRAFT" == label
+                for address in parse_email_addresses(headers.get("to", ""))
+            ],
             "messageCount": len(thread_messages),
             "subject": thread_subject,
             "date": latest_headers.get("date", ""),

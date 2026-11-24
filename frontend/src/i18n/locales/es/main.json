@@ -128,6 +128,7 @@
       "empty": "No hay correos que coincidan"
     },
     "mailNote": {
+      "participants": "Otros participantes",
       "title": "Nota del correo",
       "add": "Añadir nota",
       "view": "Ver nota",

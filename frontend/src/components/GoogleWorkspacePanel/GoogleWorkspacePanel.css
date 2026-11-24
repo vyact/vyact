@@ -13,7 +13,7 @@
     flex-direction: column;
     color: var(--text);
 }
-.google-workspace-panel--embedded { position: relative; top: auto; right: auto; bottom: auto; min-width: 0; max-width: none; flex: 0 0 auto; height: 100%; box-shadow: none; }
+.google-workspace-panel--embedded { position: relative; top: auto; right: auto; bottom: auto; box-sizing: border-box; width: 100%; min-width: 0; max-width: none; flex: 0 0 auto; height: 100%; box-shadow: none; }
 
 :root[data-theme='light'] .google-workspace-panel {
     --gwp-content-surface: color-mix(in srgb, var(--surface2) 30%, var(--surface));

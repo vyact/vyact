@@ -128,6 +128,7 @@
       "empty": "Aucun e-mail correspondant"
     },
     "mailNote": {
+      "participants": "Autres participants",
       "title": "Note du message",
       "add": "Ajouter une note",
       "view": "Voir la note",

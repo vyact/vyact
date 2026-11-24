@@ -128,6 +128,7 @@
       "empty": "Không tìm thấy email phù hợp"
     },
     "mailNote": {
+      "participants": "Người tham gia khác",
       "title": "Ghi chú email",
       "add": "Thêm ghi chú",
       "view": "Xem ghi chú",

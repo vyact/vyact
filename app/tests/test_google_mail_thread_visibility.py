@@ -29,6 +29,21 @@ class GoogleMailThreadVisibilityTests(unittest.TestCase):
         self.messages[1]["labelIds"] = ["INBOX", "UNREAD"]
         self.assertEqual([message["id"] for message in visible_mail_thread_messages(self.messages, "INBOX")], ["sent", "spam"])
 
+    def test_sent_summary_includes_to_addresses_across_the_thread(self):
+        sent, reply, _ = self.messages
+        sent["payload"] = {"headers": [{"name": "To", "value": '"Doe, Jane" <jane@example.com>, team@example.com'}]}
+        reply["labelIds"] = ["INBOX"]
+        reply["payload"] = {"headers": [{"name": "To", "value": "me@example.com"}]}
+        result = _format_mail_threads(
+            {"threads": [{"id": "thread"}]},
+            {"thread": {"id": "thread", "messages": [sent, reply]}}, "me@example.com", "SENT",
+        )["messages"][0]
+        self.assertEqual(result["threadRecipients"], [
+            {"name": "Doe, Jane", "email": "jane@example.com"},
+            {"name": "", "email": "team@example.com"},
+            {"name": "", "email": "me@example.com"},
+        ])
+
     def test_draft_remains_visible_without_becoming_a_sender(self):
         received = {
             "id": "received", "labelIds": ["INBOX"],

@@ -71,6 +71,7 @@ interface GoogleMailParticipant {
 }
 
 interface GoogleMailWorkspaceMessage {
+    threadRecipients?: {name: string; email: string}[];
     id: string;
     threadId: string;
     from: string;

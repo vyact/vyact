@@ -128,6 +128,7 @@
       "empty": "검색 조건에 맞는 메일이 없어요"
     },
     "mailNote": {
+      "participants": "대화 상대",
       "title": "메일 메모",
       "add": "메모 추가",
       "view": "메모 보기",

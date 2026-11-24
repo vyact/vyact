@@ -607,15 +607,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
                     </div>
                 ))}
             {panels.activePanel === 'google-workspace' && googleWorkspaceOpen && (
-                <React.Suspense fallback={null}>
-                    <GoogleWorkspacePanel onAccountSwitch={onWorkspaceAccountSwitch} key={`${workspaceProvider}:${workspaceAccountId}:${workspaceRequestId}`} requestedAccountId={workspaceAccountId} provider={workspaceProvider} embedded selectedMessageId={selectedGoogleMailId}
-                        selectedCalendarEvent={selectedGoogleCalendarEvent}
-                        selectedDriveFolder={selectedGoogleDriveFolder}
-                        onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}
-                        onAttachDriveFileToChat={onAttachDriveFileToChat}
-                        onAttachMailFilesToChat={onAttachMailFilesToChat}
-                        onIndexDriveDocument={onIndexDriveDocument}/>
-                </React.Suspense>
+                <div className="chat-workspace-panel" style={{width: `${workspacePanelWidth}%`}}>
+                    <React.Suspense fallback={null}>
+                        <GoogleWorkspacePanel onAccountSwitch={onWorkspaceAccountSwitch} key={`${workspaceProvider}:${workspaceAccountId}:${workspaceRequestId}`} requestedAccountId={workspaceAccountId} provider={workspaceProvider} embedded selectedMessageId={selectedGoogleMailId}
+                            selectedCalendarEvent={selectedGoogleCalendarEvent}
+                            selectedDriveFolder={selectedGoogleDriveFolder}
+                            onClose={onGoogleWorkspaceClose || (() => {})}
+                            onAttachDriveFileToChat={onAttachDriveFileToChat}
+                            onAttachMailFilesToChat={onAttachMailFilesToChat}
+                            onIndexDriveDocument={onIndexDriveDocument}/>
+                    </React.Suspense>
+                </div>
             )}
         </div>
     );
