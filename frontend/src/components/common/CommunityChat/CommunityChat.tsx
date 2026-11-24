@@ -3,7 +3,6 @@ import ModalCloseButton from '../ModalOverlay/ModalCloseButton';
 import {Play} from 'lucide-react';
 import {getTopmostModalOverlay} from '../ModalOverlay/modalStack';
 import ImageViewer from '../../ImageViewer/ImageViewer';
-import useObjectUrl from '../useObjectUrl';
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
 import {SUPPORTED_LANGUAGES} from '../../../i18n/languages';
@@ -16,6 +15,7 @@ import {STOCK_ANALYSIS_SHORTCUT_KEY, STOCK_MARKETS} from '../../../services/stoc
 const FRAME_READY_TIMEOUT_MS = 15_000;
 const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const SHORTCUT_MESSAGE = 'vyact:community-shortcut';
+const MAX_CHART_PREVIEW_IMAGES = 3;
 const MAX_CHART_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_COMMUNITY_MESSAGE_LENGTH = 2000;
 const TRANSLATION_TIMEOUT_MS = 310_000;
@@ -58,7 +58,9 @@ function sendStockScope(frame: HTMLIFrameElement | null, scope: StockChatScope, 
     frame?.contentWindow?.postMessage({type: 'vyact:community-select-scope', marketName: '', ...scope}, origin);
 }
 
-function ignoreChartIndexChange() {}
+function isChartImage(image: unknown): image is Blob {
+    return image instanceof Blob && image.type === 'image/png' && image.size > 0 && image.size <= MAX_CHART_IMAGE_BYTES;
+}
 
 type ChartAttachmentKind = 'chart' | 'sector-map';
 
@@ -109,10 +111,18 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         setYouTubeVideoId(undefined);
         if (!iframe.current?.closest('[hidden], [inert]')) iframe.current?.focus({preventScroll: true});
     }, []);
-    const [chartImage, setChartImage] = useState<Blob>();
-    const chartImageUrl = useObjectUrl(chartImage);
+    const [chartImages, setChartImages] = useState<Blob[]>();
+    const [chartImageIndex, setChartImageIndex] = useState(0);
+    const [chartImageSources, setChartImageSources] = useState<{images: Blob[]; items: {src: string; alt: string}[]}>();
+    useEffect(() => {
+        if (!chartImages) return;
+        const items = chartImages.map((image, index) => ({src: URL.createObjectURL(image), alt: `chart-${index + 1}.png`}));
+        setChartImageSources({images: chartImages, items});
+        return () => items.forEach(({src}) => URL.revokeObjectURL(src));
+    }, [chartImages]);
     const closeChartImage = useCallback(() => {
-        setChartImage(undefined);
+        setChartImages(undefined);
+        setChartImageSources(undefined);
         if (!iframe.current?.closest('[hidden], [inert]')) iframe.current?.focus();
     }, []);
     const chartCapture = useRef({capture: captureChart, kind: chartAttachmentKind});
@@ -246,11 +256,17 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 return;
             }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-open') {
-                const {image} = event.data;
-                if (!frame.closest('[hidden], [inert]') && image instanceof Blob
-                    && image.type === 'image/png' && image.size > 0 && image.size <= MAX_CHART_IMAGE_BYTES) {
+                if (frame.closest('[hidden], [inert]')) return;
+                const {image, images, index} = event.data;
+                if (Array.isArray(images) && images.length > 0 && images.length <= MAX_CHART_PREVIEW_IMAGES
+                    && images.every(isChartImage) && Number.isInteger(index) && index >= 0 && index < images.length) {
                     frame.blur();
-                    setChartImage(image);
+                    setChartImages(images);
+                    setChartImageIndex(index);
+                } else if (isChartImage(image)) {
+                    frame.blur();
+                    setChartImages([image]);
+                    setChartImageIndex(0);
                 }
                 return;
             }
@@ -416,8 +432,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                     allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowFullScreen/>
             </div>
         </ModalOverlay>}
-        {chartImage && chartImageUrl && <ImageViewer images={[{src: chartImageUrl, alt: 'chart.png'}]}
-            currentIndex={0} onClose={closeChartImage} onIndexChange={ignoreChartIndexChange}/>}
+        {chartImageSources && chartImageSources.images === chartImages && <ImageViewer images={chartImageSources.items}
+            currentIndex={chartImageIndex} onClose={closeChartImage} onIndexChange={setChartImageIndex}/>}
         {entry === 'stock-analysis' && (picker.visible || account) &&
             <div hidden={!picker.visible}>{stockPicker?.(picker.enabled, stockScope, selectScope, accountMenu)}</div>}
         <div className="community-chat-stage">
