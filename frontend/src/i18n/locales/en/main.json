@@ -1853,7 +1853,7 @@
   },
   "stockAnalysis": {
     "mapSearch": "Find a stock on the map",
-    "community": {"playYouTubeVideo": "Play YouTube video", "stockRoom": "Search name or ticker", "allMarkets": "All markets", "selectMarketFirst": "Choose a market first", "chat": "Chat", "unavailable": "The community connection is not configured yet."},
+    "community": {"attachMarketSummary": "Attach market summary", "playYouTubeVideo": "Play YouTube video", "stockRoom": "Search name or ticker", "allMarkets": "All markets", "selectMarketFirst": "Choose a market first", "chat": "Chat", "unavailable": "The community connection is not configured yet."},
     "globalIndicators": {
       "treasury": "US 10Y yield",
       "title": "Global markets",

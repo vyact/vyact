@@ -225,3 +225,25 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
         to {opacity: 0;}
     }
 }
+
+.stock-sector-map-controls .stock-market-summary-attach {
+    --chat-attachment-fill: #6d28d9;
+    --chat-attachment-hover: #7c3aed;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    color: #fff;
+    border: 1px solid var(--chat-attachment-hover);
+    background: var(--chat-attachment-fill);
+}
+.stock-sector-map-controls .stock-market-summary-attach:hover:not(:disabled) {
+    color: #fff;
+    background: var(--chat-attachment-hover);
+}
+.stock-sector-map-controls .stock-market-summary-attach:focus-visible {
+    outline: 2px solid var(--chat-attachment-hover);
+    outline-offset: 2px;
+}

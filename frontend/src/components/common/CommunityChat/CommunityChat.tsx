@@ -37,6 +37,8 @@ const STOCK_COMMUNITY_SHORTCUTS = new Map([
     ['ArrowLeft', 'ArrowLeft'],
 ]);
 
+export type MarketSummaryAttachmentAction = {capture: () => void; disabled: boolean};
+
 export type CommunityChatEntry = 'main' | 'stock-analysis' | 'novel-studio';
 
 const THEME_TOKENS = ['--bg', '--bg-secondary', '--surface', '--surface2', '--border', '--accent', '--info', '--text', '--muted', '--on-accent', '--warn', '--overlay', '--success', '--action-delete'];
@@ -69,13 +71,15 @@ const TRANSLATION_PREFERENCES_URL = '/api/community/translation-preferences';
 const TRANSLATION_PREFERENCES_UPDATED = 'vyact:community-translation-preferences-updated';
 let translationPreferenceWrites: Promise<unknown> = Promise.resolve();
 
-export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart, chartAttachmentKind = 'chart'}: {
+export default function CommunityChat({entry = 'main', title, unavailableMessage, loadingIndicator, stockPicker, captureChart, chartAttachmentKind = 'chart', captureMarketSummary, onMarketSummaryAttachmentChange}: {
     entry?: CommunityChatEntry;
     title: string;
     unavailableMessage: string;
     loadingIndicator?: ReactNode;
     chartAttachmentKind?: ChartAttachmentKind;
     captureChart?: () => Promise<Blob | null>;
+    captureMarketSummary?: () => Promise<Blob | null>;
+    onMarketSummaryAttachmentChange?: (attach: MarketSummaryAttachmentAction | null) => void;
     stockPicker?: (enabled: boolean, scope: StockChatScope, selectScope: (scope: StockChatScope) => void, accountMenu: ReactNode) => ReactNode;
 }) {
     const {i18n, t} = useTranslation('main');
@@ -88,6 +92,18 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const [picker, setPicker] = useState({visible: false, enabled: false});
     const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string; withdrawLabel?: string} | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
+    const [marketSummaryStatus, setMarketSummaryStatus] = useState<"ready" | "full">();
+    const marketSummaryCapture = useRef(captureMarketSummary);
+    useEffect(() => {marketSummaryCapture.current = captureMarketSummary;}, [captureMarketSummary]);
+    useEffect(() => {
+        if (!onMarketSummaryAttachmentChange || !marketSummaryStatus || !captureMarketSummary) return;
+        const origin = new URL(COMMUNITY_URL).origin;
+        onMarketSummaryAttachmentChange({
+            disabled: marketSummaryStatus === 'full',
+            capture: () => iframe.current?.contentWindow?.postMessage({type: 'vyact:community-market-summary-capture'}, origin),
+        });
+        return () => onMarketSummaryAttachmentChange(null);
+    }, [captureMarketSummary, marketSummaryStatus, onMarketSummaryAttachmentChange]);
     const [youtubeVideoId, setYouTubeVideoId] = useState<string>();
     const closeYouTubeVideo = useCallback(() => {
         setYouTubeVideoId(undefined);
@@ -175,6 +191,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         };
         const onFrameLoad = () => {
             setYouTubeVideoId(undefined);
+            setMarketSummaryStatus(undefined);
+            if (entry === 'stock-analysis') iframe.current?.contentWindow?.postMessage({type: 'vyact:community-market-summary-status-request'}, origin);
             restoredStockScope.current = false;
             syncFrame();
             if (entry !== 'stock-analysis') setFrameReady(true);
@@ -236,6 +254,10 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 }
                 return;
             }
+            if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-market-summary-status') {
+                setMarketSummaryStatus(event.data.ready === true ? (event.data.full === true ? 'full' : 'ready') : undefined);
+                return;
+            }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-status') {
                 sendChartAvailability(frame, origin, !!chartCapture.current.capture, chartCapture.current.kind);
                 return;
@@ -246,7 +268,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 const reply = (chart: Blob | null) => frame.contentWindow?.postMessage({
                     type: 'vyact:community-chart-result', requestId, chart,
                 }, origin);
-                const {capture} = chartCapture.current;
+                const capture = event.data.kind === 'market-summary' ? marketSummaryCapture.current : chartCapture.current.capture;
                 if (capture && !frame.closest('[hidden], [inert]')) void capture().then(reply, () => reply(null));
                 else reply(null);
                 return;

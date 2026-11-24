@@ -1,4 +1,6 @@
+import type {MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import {isGlobalIndicator, supportsStockFinancials} from '../../utils/stockSymbols';
+import {captureMarketSummary} from './marketSummarySnapshot';
 import GlobalMarketIndicators from './GlobalMarketIndicators';
 import PinnedIndexBar from './PinnedIndexBar';
 import StockExternalLinks from './StockExternalLinks';
@@ -109,6 +111,12 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const updateGroupSectors = useCallback((sectors: MarketSector[]) => setGroupSectorScope({market, sectors}), [market]);
     const groupSectors = groupSectorScope.market === market ? groupSectorScope.sectors : [];
     const [query, setQuery] = useState('');
+    const marketContent = useRef<HTMLElement>(null);
+    const [attachMarketSummary, setAttachMarketSummary] = useState<MarketSummaryAttachmentAction | null>(null);
+    const registerMarketSummaryAttachment = useCallback((attach: MarketSummaryAttachmentAction | null) => {
+        setAttachMarketSummary(attach);
+    }, []);
+    const captureSummary = useCallback(() => marketContent.current ? captureMarketSummary(marketContent.current) : Promise.resolve(null), []);
     const [captureMap, setCaptureMap] = useState<(() => HTMLCanvasElement | null) | null>(null);
     const registerMapCapture = useCallback((capture: (() => HTMLCanvasElement | null) | null) => {
         setCaptureMap(() => capture);
@@ -391,12 +399,12 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
     <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} sidebarOverlay={sidebarHover} onSidebarMouseEnter={onSidebarHoverEnter} onSidebarMouseLeave={onSidebarHoverLeave} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
-        <div className="stock-analysis-inner has-discussion"><main className={`stock-analysis-content${active && detailTab === 'news' ? ' stock-analysis-content-news' : ''}`}>
+        <div className="stock-analysis-inner has-discussion"><main ref={marketContent} className={`stock-analysis-content${active && detailTab === 'news' ? ' stock-analysis-content-news' : ''}`}>
             <GlobalMarketIndicators hidden={!!active} onOpen={openSymbol}/>
             {!active && (showEmptyGroups
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
-                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onCaptureChange={registerMapCapture} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
+                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onCaptureChange={registerMapCapture} onAttachMarketSummary={attachMarketSummary} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} aria-keyshortcuts="Meta+ArrowLeft Control+ArrowLeft" onClick={returnToOverview}><ArrowLeft size={16} aria-hidden="true"/></button>
                     <p className="stock-symbol-label">{active.symbol}</p><h1>{active.name}</h1>
@@ -439,6 +447,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             </div>}
         </main>
         <StockDiscussionPanel market={active ? instrumentMarket : market} directory={symbols}
+            captureMarketSummary={!active && !showEmptyGroups ? captureSummary : undefined}
+            onMarketSummaryAttachmentChange={registerMarketSummaryAttachment}
             captureMap={!active && !showEmptyGroups ? captureMap : null}
             captureChart={active && detailTab === 'chart' && rows?.length ? captureChart : undefined}
             renderAnalysis={visibility => {

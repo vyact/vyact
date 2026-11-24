@@ -6,7 +6,7 @@ import useStockAnalysisShortcut from './useStockAnalysisShortcut';
 import type StockDiscussionSidebar from './StockDiscussionSidebar';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
-import CommunityChat from '../common/CommunityChat/CommunityChat';
+import CommunityChat, {type MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import StockChatPicker from './StockChatPicker';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import {chartSnapshotPng, MAX_CHAT_IMAGE_DIMENSION} from './chartSnapshot';
@@ -34,9 +34,11 @@ function readLayout(): {width: number; collapsed: boolean} {
 
 type AnalysisVisibility = Pick<ComponentProps<typeof StockDiscussionSidebar>, 'isVisible' | 'onReveal'>;
 
-export default function StockDiscussionPanel({market, directory, captureChart, captureMap, renderAnalysis}: {
+export default function StockDiscussionPanel({market, directory, captureChart, captureMap, captureMarketSummary, onMarketSummaryAttachmentChange, renderAnalysis}: {
     market: StockMarket;
     directory: StockSymbol[];
+    captureMarketSummary?: () => Promise<Blob | null>;
+    onMarketSummaryAttachmentChange: (attach: MarketSummaryAttachmentAction | null) => void;
     captureMap?: (() => HTMLCanvasElement | null) | null;
     captureChart?: ComponentProps<typeof StockDiscussionSidebar>['captureChart'];
     renderAnalysis: (visibility: AnalysisVisibility) => ReactNode;
@@ -103,6 +105,8 @@ export default function StockDiscussionPanel({market, directory, captureChart, c
             </div>
             {chatLoaded && <div className="stock-community-tab-content stock-community-chat-content" hidden={activeTab !== 'chat'}><CommunityChat entry="stock-analysis"
                 captureChart={captureChart || captureMap ? captureChatChart : undefined}
+                captureMarketSummary={captureMarketSummary}
+                onMarketSummaryAttachmentChange={activeTab === 'chat' && !layout.collapsed ? onMarketSummaryAttachmentChange : undefined}
                 chartAttachmentKind={captureMap ? 'sector-map' : 'chart'}
                 stockPicker={(enabled, scope, onScopeChange, accountMenu) => <StockChatPicker localMarket={market} directory={directory}
                     enabled={enabled} scope={scope} onScopeChange={onScopeChange} accountMenu={accountMenu}/>}

@@ -1852,7 +1852,7 @@
   },
   "stockAnalysis": {
     "mapSearch": "Tìm cổ phiếu trên bản đồ",
-    "community": {"playYouTubeVideo": "Phát video YouTube", "stockRoom": "Tìm tên hoặc mã chứng khoán", "allMarkets": "Tất cả thị trường", "selectMarketFirst": "Chọn thị trường trước", "chat": "Trò chuyện", "unavailable": "Kết nối cộng đồng chưa được cấu hình."},
+    "community": {"attachMarketSummary": "Đính kèm tóm tắt thị trường", "playYouTubeVideo": "Phát video YouTube", "stockRoom": "Tìm tên hoặc mã chứng khoán", "allMarkets": "Tất cả thị trường", "selectMarketFirst": "Chọn thị trường trước", "chat": "Trò chuyện", "unavailable": "Kết nối cộng đồng chưa được cấu hình."},
     "globalIndicators": {
       "treasury": "Lợi suất Mỹ 10 năm",
       "title": "Thị trường toàn cầu",

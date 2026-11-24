@@ -1,6 +1,7 @@
+import type {MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import {useEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {hierarchy, treemap, type HierarchyRectangularNode} from 'd3-hierarchy';
-import {ArrowLeft} from 'lucide-react';
+import {ArrowLeft, Paperclip} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -101,7 +102,7 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen, directory = [], stockGroups, onSectorsChange, onCaptureChange}: {onCaptureChange?: (capture: (() => HTMLCanvasElement | null) | null) => void; onSectorsChange?: (sectors: MarketSector[]) => void;market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
+export default function StockSectorMap({market, onOpen, directory = [], stockGroups, onSectorsChange, onCaptureChange, onAttachMarketSummary}: {onAttachMarketSummary?: MarketSummaryAttachmentAction | null; onCaptureChange?: (capture: (() => HTMLCanvasElement | null) | null) => void; onSectorsChange?: (sectors: MarketSector[]) => void;market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -326,6 +327,11 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 <span>{quoteDateLabel}</span>
             </div>}
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
+            {onAttachMarketSummary && <button type="button" className="modal-action-cancel stock-market-summary-attach"
+                aria-label={t('stockAnalysis.community.attachMarketSummary')} title={t('stockAnalysis.community.attachMarketSummary')}
+                disabled={onAttachMarketSummary.disabled} onClick={onAttachMarketSummary.capture}>
+                <Paperclip size={16} aria-hidden="true"/>
+            </button>}
             </div>
         </header>
         <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>
