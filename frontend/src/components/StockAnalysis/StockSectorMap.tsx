@@ -247,12 +247,16 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
 
     const previewSector = localizedSectors?.find(sector => sector.name === preview?.sectorName);
     const previewStock = previewSector?.stocks.find(stock => stock.symbol === preview?.symbol);
-    const showPreview = (sector: MarketSector, stock?: SectorStock, industryName?: string, remainder = false) => {
+    const showPreview = (sector: MarketSector, stock?: SectorStock, industryName?: string, remainder = false, isLocatedTileHover = false) => {
         clearTimeout(previewTimer.current);
+        const nextPreview = {sectorName: sector.name, industryName, remainder, symbol: stock?.symbol};
+        if (isLocatedTileHover) {
+            setLocatedStock(undefined);
+            setPreview(nextPreview);
+            return;
+        }
         if (locatedTile) return;
-        previewTimer.current = setTimeout(() => {
-            setPreview({sectorName: sector.name, industryName, remainder, symbol: stock?.symbol});
-        }, 70);
+        previewTimer.current = setTimeout(() => setPreview(nextPreview), 70);
     };
     const industryAnchor = preview?.industryName ? layout?.descendants().find(node => node.data.industry?.name === preview.industryName && node.data.industry?.sector.name === preview.sectorName) : undefined;
     const remainderAnchor = preview?.remainder ? layout?.children?.find(node => node.data.remainder && node.data.sector?.name === preview.sectorName) : undefined;
@@ -375,10 +379,15 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 const sectorGroup = node.ancestors().find(parent => parent.data.sector)?.data;
                 const previewSector = sector ?? industry?.sector ?? selectedSector ?? node.parent?.data.sector;
                 const key = stock ? `${previewSector?.name ?? ''}:${stock.symbol}` : item.name;
+                const isLocatedTile = node === locatedTile;
+                const showTilePreviewOnHover = () => {
+                    if (previewSector) showPreview(previewSector, stock, industry?.name, sectorGroup?.remainder, isLocatedTile);
+                };
                 return <button key={key} type="button" className="stock-sector-map-tile" aria-label={`${item.name} · ${detail}`}
                             style={{...tileStyle(node, width, height), background: tileColor(item.change, market),
                                 fontSize: Math.min(23, Math.max(10, Math.min(tileWidth / 7, tileHeight / 3.5)))}}
-                            onMouseEnter={() => {if (previewSector) showPreview(previewSector, stock, industry?.name, sectorGroup?.remainder);}}
+                            onMouseEnter={showTilePreviewOnHover}
+                            onMouseMove={isLocatedTile ? showTilePreviewOnHover : undefined}
                             onFocus={() => {if (previewSector) showPreview(previewSector, stock, industry?.name, sectorGroup?.remainder);}}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
                             onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (stock) onOpen(stock); else if (sector && !stockGroups) setSelectedSector(sector);}}>

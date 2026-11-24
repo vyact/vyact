@@ -1852,7 +1852,7 @@
   },
   "stockAnalysis": {
     "mapSearch": "ค้นหาหุ้นในแผนที่",
-    "community": {"stockRoom": "ค้นหาชื่อหรือตัวย่อหุ้น", "allMarkets": "ทุกตลาด", "selectMarketFirst": "เลือกตลาดก่อน", "chat": "แชท", "unavailable": "ยังไม่ได้ตั้งค่าการเชื่อมต่อชุมชน"},
+    "community": {"playYouTubeVideo": "เล่นวิดีโอ YouTube", "stockRoom": "ค้นหาชื่อหรือตัวย่อหุ้น", "allMarkets": "ทุกตลาด", "selectMarketFirst": "เลือกตลาดก่อน", "chat": "แชท", "unavailable": "ยังไม่ได้ตั้งค่าการเชื่อมต่อชุมชน"},
     "globalIndicators": {
       "treasury": "ผลตอบแทนพันธบัตรสหรัฐ 10 ปี",
       "title": "ตลาดโลก",

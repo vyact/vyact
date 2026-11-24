@@ -5,12 +5,13 @@ import StockExternalLinks from './StockExternalLinks';
 import {withMarketIndices} from './stockDirectory';
 import useStockMarketShortcuts from './useStockMarketShortcuts';
 import useStockBackShortcut from './useStockBackShortcut';
+import useStockSearchNavigation from './useStockSearchNavigation';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
 import {WorkspaceSidebarContext} from '../../contexts/WorkspaceSidebarContext';
 import './StockSymbolLabel.css';
 import type {ChartSnapshot} from './chartSnapshot';
-import {useCallback, useContext, useEffect, useRef, useState} from 'react';
+import {useCallback, useContext, useEffect, useId, useRef, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartLine, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, Folders, ChevronDown} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
@@ -129,7 +130,6 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         else stockGroups.reorder(market, source.groupId, target.groupId, target.after);
     });
     const watchlistOnly = listView === 'watchlist';
-    const changeListView = (view: typeof listView) => {setListView(view); setActive(null);};
     const watchlist = useStockWatchlist();
     const [active, setActive] = useState<StockSymbol | null>(null);
     const [rows, setRows] = useState<DailyPrice[] | null>(null);
@@ -160,6 +160,15 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const watchlistCount = directory.filter(item => watchlist.contains(market, item.symbol)).length;
     const filtered = directory.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
         && `${symbol} ${name}`.toLowerCase().includes(query.trim().toLowerCase()));
+    const resultsId = useId();
+    const showStockResults = listView !== 'groups' && directoryState === 'ready';
+    const visibleStocks = showStockResults ? filtered.slice(0, VISIBLE_SYMBOLS) : [];
+    const {activeIndex, activeOption, moveSelection, selectSymbol, selectedResult, resetSelection} = useStockSearchNavigation(visibleStocks);
+    const changeListView = (view: typeof listView) => {
+        resetSelection();
+        setListView(view);
+        setActive(null);
+    };
 
     useEffect(() => {
         const controller = new AbortController();
@@ -213,6 +222,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         setSymbols([]);
         setDirectoryState('loading');
         setQuery('');
+        resetSelection();
         setActive(null);
         setRows(null);
         setPriceError(false);
@@ -310,7 +320,19 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         {listView !== 'groups' && <label className="stock-analysis-search">
             <Search size={16} aria-hidden="true"/>
             <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query}
-                   onChange={event => setQuery(event.target.value)}/>
+                   aria-controls={showStockResults ? resultsId : undefined}
+                   onChange={event => {
+                       resetSelection();
+                       setQuery(event.target.value);
+                   }}
+                   onKeyDown={event => {
+                       if (event.key === 'Enter' && !event.nativeEvent.isComposing && selectedResult) {
+                           event.preventDefault();
+                           openSymbol(selectedResult);
+                       } else {
+                           moveSelection(event);
+                       }
+                   }}/>
         </label>}
         {directoryState === 'loading' && <p role="status">{tr('loading')}</p>}
         {directoryState === 'error' && <>
@@ -320,16 +342,23 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 setDirectoryVersion(value => value + 1);
             }}>{tr('retry')}</button>
         </>}
-        {listView !== 'groups' && directoryState === 'ready' && <>
+        {showStockResults && <>
             <p className="stock-analysis-results" role="status">
                 <Trans t={t} i18nKey="stockAnalysis.results" values={{
-                    shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(Math.min(filtered.length, VISIBLE_SYMBOLS)),
+                    shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(visibleStocks.length),
                     total: new Intl.NumberFormat(i18n.resolvedLanguage).format(filtered.length),
                 }} components={{total: <strong className="stock-analysis-result-total"/>, shown: <strong className="stock-analysis-result-shown"/>}}/>
             </p>
-            <ul className="stock-analysis-symbols">
-                {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
-                    <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
+            <span className="stock-analysis-search-announcement" role="status">
+                {activeIndex >= 0 && selectedResult && `${selectedResult.symbol} · ${selectedResult.name}`}
+            </span>
+            <ul id={resultsId} className="stock-analysis-symbols">
+                {visibleStocks.map((item, index) => <li key={item.symbol} data-keyboard-active={index === activeIndex || undefined}>
+                    <button type="button" ref={index === activeIndex ? activeOption : undefined} aria-pressed={item.symbol === activeSymbol}
+                        onFocus={() => selectSymbol(item.symbol)} onKeyDown={moveSelection} onClick={event => {
+                            event.currentTarget.focus({preventScroll: true});
+                            openSymbol(item);
+                        }}>
                         <strong className="stock-symbol-code">{item.symbol}
                             {market === 'KR' && item.exchange && <small className="stock-symbol-exchange" data-exchange={item.exchange === 'KOSPI' ? 'kospi' : 'kosdaq'}
                                     aria-label={tr(item.exchange === 'KOSPI' ? 'indexKospi' : 'indexKosdaq')}>
@@ -370,7 +399,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onCaptureChange={registerMapCapture} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} aria-keyshortcuts="Meta+ArrowLeft Control+ArrowLeft" onClick={returnToOverview}><ArrowLeft size={16} aria-hidden="true"/></button>
-                    <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p>
+                    <p className="stock-symbol-label">{active.symbol}</p><h1>{active.name}</h1>
                     <StockExternalLinks market={market} symbol={active.symbol}/></div>
                 <div className="stock-analysis-header-actions">
                 <div className="stock-analysis-comparison-action" hidden={detailTab !== 'chart'} ref={setComparisonTarget}/>

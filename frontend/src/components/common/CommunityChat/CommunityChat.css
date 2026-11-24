@@ -84,3 +84,32 @@
 .community-avatar-withdraw-toggle::-webkit-details-marker {display: none;}
 .community-avatar-withdraw-details[open] .community-avatar-withdraw-toggle svg {transform: rotate(180deg);}
 .community-avatar-withdraw-details .community-avatar-withdraw {width: 100%;}
+
+.community-youtube-modal {
+    width: min(800px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+.community-youtube-modal header {display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px;}
+.community-youtube-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 20px;
+    border-radius: 6px;
+    background: #f00;
+    color: #fff;
+}
+.community-youtube-player {
+    display: block;
+    width: 100%;
+    min-height: 200px;
+    max-height: calc(100dvh - 110px);
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: #000;
+}

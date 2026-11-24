@@ -880,13 +880,24 @@ function createWindow() {
         mainWindow.on("leave-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", false));
     }
 
+    const canWriteYouTubeLink = (webContents, requestingOrigin) =>
+        webContents === mainWindow?.webContents
+        && URL.parse(requestingOrigin ?? "")?.origin === "https://www.youtube-nocookie.com";
+
     // 마이크 + Web Speech API 네트워크 요청 권한 허용
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+        if (permission === "clipboard-sanitized-write") {
+            callback(canWriteYouTubeLink(webContents, details.requestingUrl));
+            return;
+        }
         const allowed = ["media", "microphone", "camera", "notifications", "mediaKeySystem", "fullscreen"];
         callback(allowed.includes(permission));
     });
 
-    session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+        if (permission === "clipboard-sanitized-write") {
+            return canWriteYouTubeLink(webContents, requestingOrigin);
+        }
         const allowed = ["media", "microphone", "camera", "notifications", "mediaKeySystem"];
         return allowed.includes(permission);
     });

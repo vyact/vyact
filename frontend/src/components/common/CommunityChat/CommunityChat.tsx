@@ -1,3 +1,6 @@
+import ModalOverlay from '../ModalOverlay/ModalOverlay';
+import ModalCloseButton from '../ModalOverlay/ModalCloseButton';
+import {Play} from 'lucide-react';
 import {getTopmostModalOverlay} from '../ModalOverlay/modalStack';
 import ImageViewer from '../../ImageViewer/ImageViewer';
 import useObjectUrl from '../useObjectUrl';
@@ -11,6 +14,7 @@ import {readStockChatScope, saveStockChatScope, STOCK_SYMBOL, type StockChatScop
 import {STOCK_ANALYSIS_SHORTCUT_KEY, STOCK_MARKETS} from '../../../services/stockAnalysis';
 
 const FRAME_READY_TIMEOUT_MS = 15_000;
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const SHORTCUT_MESSAGE = 'vyact:community-shortcut';
 const MAX_CHART_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_COMMUNITY_MESSAGE_LENGTH = 2000;
@@ -74,7 +78,8 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     captureChart?: () => Promise<Blob | null>;
     stockPicker?: (enabled: boolean, scope: StockChatScope, selectScope: (scope: StockChatScope) => void, accountMenu: ReactNode) => ReactNode;
 }) {
-    const {i18n} = useTranslation();
+    const {i18n, t} = useTranslation('main');
+    const playYouTubeLabel = t('stockAnalysis.community.playYouTubeVideo');
     const shortcuts = entry === 'stock-analysis' ? STOCK_COMMUNITY_SHORTCUTS : COMMUNITY_SHORTCUTS;
     const language = i18n.resolvedLanguage ?? i18n.language;
     const [initialLanguage] = useState(language);
@@ -83,6 +88,11 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     const [picker, setPicker] = useState({visible: false, enabled: false});
     const [account, setAccount] = useState<{nickname: string; nicknameEditLabel?: string; avatarSrc?: string; avatarEditLabel?: string; logoutLabel: string; withdrawLabel?: string} | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
+    const [youtubeVideoId, setYouTubeVideoId] = useState<string>();
+    const closeYouTubeVideo = useCallback(() => {
+        setYouTubeVideoId(undefined);
+        if (!iframe.current?.closest('[hidden], [inert]')) iframe.current?.focus({preventScroll: true});
+    }, []);
     const [chartImage, setChartImage] = useState<Blob>();
     const chartImageUrl = useObjectUrl(chartImage);
     const closeChartImage = useCallback(() => {
@@ -164,6 +174,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
             if (entry === 'stock-analysis') sendChartAvailability(iframe.current, origin, !!chartCapture.current.capture, chartCapture.current.kind);
         };
         const onFrameLoad = () => {
+            setYouTubeVideoId(undefined);
             restoredStockScope.current = false;
             syncFrame();
             if (entry !== 'stock-analysis') setFrameReady(true);
@@ -208,6 +219,14 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const onMessage = (event: MessageEvent) => {
             const frame = iframe.current;
             if (!frame || event.origin !== origin || event.source !== frame.contentWindow) return;
+            if (event.data?.type === 'vyact:community-youtube-open') {
+                const {videoId} = event.data;
+                if (typeof videoId === 'string' && YOUTUBE_VIDEO_ID.test(videoId)
+                    && frame.getClientRects().length && !frame.closest('[hidden], [inert]')) {
+                    setYouTubeVideoId(videoId);
+                }
+                return;
+            }
             if (entry === 'stock-analysis' && event.data?.type === 'vyact:community-chart-open') {
                 const {image} = event.data;
                 if (!frame.closest('[hidden], [inert]') && image instanceof Blob
@@ -330,6 +349,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
     if (!COMMUNITY_URL) return <p className="community-chat-unavailable">{unavailableMessage}</p>;
     const url = new URL(COMMUNITY_URL);
     url.searchParams.set('embed', 'true');
+    url.searchParams.set('hostYouTube', 'true');
     url.searchParams.set('entry', entry);
     url.searchParams.set('theme', initialTheme);
     if (initialLanguage) url.searchParams.set('lang', initialLanguage);
@@ -359,6 +379,21 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         onLogout={() => iframe.current?.contentWindow?.postMessage({type: 'vyact:community-logout'}, url.origin)}/>;
     const waitingForFrame = hasLoadingIndicator && !frameReady;
     return <>
+        {youtubeVideoId && <ModalOverlay onClose={closeYouTubeVideo} captureEscape
+            aria-label={playYouTubeLabel}>
+            <div className="community-youtube-modal">
+                <header>
+                    <span className="community-youtube-icon" aria-hidden="true">
+                        <Play size={12} fill="currentColor" strokeWidth={0}/>
+                    </span>
+                    <ModalCloseButton autoFocus onClick={closeYouTubeVideo}/>
+                </header>
+                <iframe className="community-youtube-player"
+                    src={`https://www.youtube-nocookie.com/embed/${youtubeVideoId}?autoplay=1&playsinline=1`}
+                    title={playYouTubeLabel} referrerPolicy="strict-origin-when-cross-origin"
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowFullScreen/>
+            </div>
+        </ModalOverlay>}
         {chartImage && chartImageUrl && <ImageViewer images={[{src: chartImageUrl, alt: 'chart.png'}]}
             currentIndex={0} onClose={closeChartImage} onIndexChange={ignoreChartIndexChange}/>}
         {entry === 'stock-analysis' && (picker.visible || account) &&
@@ -366,7 +401,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         <div className="community-chat-stage">
             <iframe ref={iframe} className="community-chat-frame" src={url.href} aria-label={title}
                 aria-hidden={waitingForFrame || undefined} data-loading={waitingForFrame || undefined}
-                data-tooltip-disabled referrerPolicy="origin"/>
+                data-tooltip-disabled referrerPolicy="origin" allow="autoplay; fullscreen"/>
             {waitingForFrame && (frameTimedOut
                 ? <div className="community-chat-load-error" role="status">{unavailableMessage}</div>
                 : loadingIndicator)}

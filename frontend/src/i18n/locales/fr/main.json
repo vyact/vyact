@@ -1854,7 +1854,7 @@
   },
   "stockAnalysis": {
     "mapSearch": "Rechercher une action sur la carte",
-    "community": {"stockRoom": "Rechercher un nom ou un symbole", "allMarkets": "Tous les marchés", "selectMarketFirst": "Choisir un marché d’abord", "chat": "Discussion", "unavailable": "La connexion à la communauté n’est pas encore configurée."},
+    "community": {"playYouTubeVideo": "Lire la vidéo YouTube", "stockRoom": "Rechercher un nom ou un symbole", "allMarkets": "Tous les marchés", "selectMarketFirst": "Choisir un marché d’abord", "chat": "Discussion", "unavailable": "La connexion à la communauté n’est pas encore configurée."},
     "globalIndicators": {
       "treasury": "Taux américain à 10 ans",
       "title": "Marchés mondiaux",

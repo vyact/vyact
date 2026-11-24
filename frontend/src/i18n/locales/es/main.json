@@ -1853,7 +1853,7 @@
   },
   "stockAnalysis": {
     "mapSearch": "Buscar una acción en el mapa",
-    "community": {"stockRoom": "Buscar nombre o símbolo", "allMarkets": "Todos los mercados", "selectMarketFirst": "Elige un mercado primero", "chat": "Chat", "unavailable": "La conexión con la comunidad aún no está configurada."},
+    "community": {"playYouTubeVideo": "Reproducir vídeo de YouTube", "stockRoom": "Buscar nombre o símbolo", "allMarkets": "Todos los mercados", "selectMarketFirst": "Elige un mercado primero", "chat": "Chat", "unavailable": "La conexión con la comunidad aún no está configurada."},
     "globalIndicators": {
       "treasury": "Rendimiento EE. UU. 10 años",
       "title": "Mercados globales",
