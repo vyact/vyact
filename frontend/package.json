@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@huggingface/gguf": "^0.4.6",
+    "@jsquash/oxipng": "^2.3.0",
     "@tiptap/extension-code-block-lowlight": "^3.31.3",
     "@tiptap/extension-details": "^3.31.3",
     "@tiptap/extension-link": "^3.31.3",

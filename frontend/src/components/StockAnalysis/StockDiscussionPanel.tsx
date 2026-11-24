@@ -9,7 +9,7 @@ import ModalTabs from '../common/ModalTabs/ModalTabs';
 import CommunityChat, {type MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import StockChatPicker from './StockChatPicker';
 import StockLoadingIndicator from './StockLoadingIndicator';
-import {chartSnapshotPng, MAX_CHAT_IMAGE_DIMENSION} from './chartSnapshot';
+import {chatSnapshotPng} from './chartSnapshot';
 import './StockCommunityChat.css';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
@@ -46,7 +46,7 @@ export default function StockDiscussionPanel({market, directory, captureChart, c
     const {t} = useTranslation('main');
     const captureChatChart = useCallback(async () => {
         const canvas = captureMap ? captureMap() : captureChart?.current?.()?.canvas;
-        return canvas ? chartSnapshotPng(canvas, MAX_CHAT_IMAGE_DIMENSION) : null;
+        return canvas ? chatSnapshotPng(canvas) : null;
     }, [captureChart, captureMap]);
     const [layout, setLayout] = useState(readLayout);
     const [activeTab, setActiveTab] = useState(readActiveTab);

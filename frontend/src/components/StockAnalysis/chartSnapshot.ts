@@ -1,6 +1,8 @@
 import type {ChartInterval} from './chartData';
 
 export const MAX_CHAT_IMAGE_DIMENSION = 2048;
+const CHAT_IMAGE_MAX_BYTES = 1024 * 1024;
+const CHAT_PNG_OPTIMIZATION_BUDGET_MS = 1800;
 
 export interface ChartSnapshotContext {
     symbol: string;
@@ -51,18 +53,59 @@ export function drawChartIndicatorLegends(canvas: HTMLCanvasElement, chartElemen
     context.restore();
 }
 
-export function chartSnapshotPng(canvas: HTMLCanvasElement, maxDimension = Infinity): Promise<Blob> {
-    const ratio = Math.min(1, maxDimension / Math.max(canvas.width, canvas.height));
-    let output = canvas;
-    if (ratio < 1) {
-        output = document.createElement('canvas');
-        output.width = Math.max(1, Math.round(canvas.width * ratio));
-        output.height = Math.max(1, Math.round(canvas.height * ratio));
-        const context = output.getContext('2d');
-        if (!context) return Promise.reject(new Error('capture_failed'));
-        context.drawImage(canvas, 0, 0, output.width, output.height);
-    }
+export function chartSnapshotPng(canvas: HTMLCanvasElement): Promise<Blob> {
     return new Promise((resolve, reject) => {
-        output.toBlob(blob => blob ? resolve(blob) : reject(new Error('capture_failed')), 'image/png');
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('capture_failed')), 'image/png');
     });
+}
+
+function optimizeChatPng(png: Blob, timeBudget: number): Promise<Blob> {
+    if (timeBudget <= 0) return Promise.resolve(png);
+    return new Promise(resolve => {
+        let worker: Worker;
+        try {
+            worker = new Worker(new URL('./chatPngOptimizer.worker.ts', import.meta.url), {type: 'module'});
+        } catch {
+            resolve(png);
+            return;
+        }
+        const finish = (result: Blob) => {
+            window.clearTimeout(timeout);
+            worker.terminate();
+            resolve(result);
+        };
+        const timeout = window.setTimeout(() => finish(png), timeBudget);
+        worker.onmessage = ({data}: MessageEvent<Blob>) => {
+            finish(data instanceof Blob && data.size > 0 && data.size < png.size ? data : png);
+        };
+        worker.onerror = () => finish(png);
+        worker.postMessage(png);
+    });
+}
+
+export async function chatSnapshotPng(source: HTMLCanvasElement): Promise<Blob> {
+    const originalDimension = Math.max(source.width, source.height);
+    let dimension = Math.min(originalDimension, MAX_CHAT_IMAGE_DIMENSION);
+    const optimizeUntil = performance.now() + CHAT_PNG_OPTIMIZATION_BUDGET_MS;
+    for (;;) {
+        let output = source;
+        if (dimension < originalDimension) {
+            const scale = dimension / originalDimension;
+            output = document.createElement('canvas');
+            output.width = Math.max(1, Math.round(source.width * scale));
+            output.height = Math.max(1, Math.round(source.height * scale));
+            const context = output.getContext('2d');
+            if (!context) throw new Error('capture_failed');
+            context.imageSmoothingQuality = 'high';
+            context.drawImage(source, 0, 0, output.width, output.height);
+        }
+
+        const encoded = await chartSnapshotPng(output);
+        const png = await optimizeChatPng(encoded, optimizeUntil - performance.now());
+        if (png.size <= CHAT_IMAGE_MAX_BYTES) return png;
+        if (dimension <= 1) throw new Error('capture_failed');
+
+        const scale = Math.min(0.85, Math.sqrt(CHAT_IMAGE_MAX_BYTES / png.size));
+        dimension = Math.max(1, Math.floor(dimension * scale));
+    }
 }

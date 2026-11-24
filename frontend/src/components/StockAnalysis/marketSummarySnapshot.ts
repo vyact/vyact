@@ -1,4 +1,4 @@
-import {chartSnapshotPng, MAX_CHAT_IMAGE_DIMENSION} from './chartSnapshot';
+import {chatSnapshotPng, MAX_CHAT_IMAGE_DIMENSION} from './chartSnapshot';
 
 const CARD_SELECTOR = '.stock-global-card, .stock-market-index-card';
 const PANEL_PADDING = 8;
@@ -94,5 +94,5 @@ export async function captureMarketSummary(content: HTMLElement): Promise<Blob |
         context.restore();
         top += bounds.height + PANEL_GAP;
     }
-    return chartSnapshotPng(canvas, MAX_CHAT_IMAGE_DIMENSION);
+    return chatSnapshotPng(canvas);
 }
