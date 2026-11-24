@@ -968,7 +968,12 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         pendingGoogleMailWorkspaceRequests.set(requestKey, request);
         return request;
     },
-    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/${workspace}/mail/messages?${params}`, undefined, 'list'); },
+    async getGoogleMailMessages(label = 'INBOX', pageToken = '', query = '') {
+        const params = new URLSearchParams({label});
+        if (pageToken) params.set('page_token', pageToken);
+        if (query) params.set('query', query);
+        return fetchJson(`${API_BASE}/${workspace}/mail/messages?${params}`, undefined, 'list');
+    },
     async getGoogleMailMessage(id: string, label = 'INBOX') {
         const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
         await assertOk(response);

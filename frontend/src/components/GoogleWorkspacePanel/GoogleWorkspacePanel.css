@@ -1068,3 +1068,80 @@
 .gwp-ai-prompt-popover:has(.gwp-ai-generated-subject) { grid-template-rows: auto minmax(0, 11fr) minmax(0, 9fr) auto; }
 .gwp-ai-generated-subject { min-width: 0; padding: 0 12px 10px; border-bottom: 1px solid var(--border); }
 .gwp-ai-generated-subject p { margin: 8px 0 0; max-height: 3.3em; overflow-y: auto; overflow-wrap: anywhere; color: var(--text); font-size: 13px; line-height: 1.65; }
+
+.gwp-mail-toolbar > div {
+    min-width: 0;
+}
+
+.gwp-mail-search {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    color: var(--text);
+}
+
+.gwp-mail-search > input {
+    box-sizing: border-box;
+    width: 150px;
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    font-weight: 400;
+}
+
+.gwp-mail-search > button {
+    flex: 0 0 auto;
+    display: grid;
+    width: 28px;
+    height: 32px;
+    place-items: center;
+    border-radius: 6px;
+}
+
+.gwp-mail-search > button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.gwp-mail-search > button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.gwp-mail-search > .custom-select-wrap {
+    flex-shrink: 0;
+}
+
+.gwp-mail-search .custom-select-trigger {
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.gwp-mail-search-field-label {
+    display: grid;
+}
+
+.gwp-mail-search-field-label > span {
+    grid-area: 1 / 1;
+}
+
+.gwp-mail-search-field-label > [aria-hidden="true"] {
+    visibility: hidden;
+}
+
+.gwp-mail-search-more {
+    display: block;
+    margin: 12px auto;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}

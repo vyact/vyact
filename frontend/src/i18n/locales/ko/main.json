@@ -123,6 +123,11 @@
     "close": "닫기"
   },
   "googleWorkspace": {
+    "mailSearch": {
+      "field": "검색 기준",
+      "clear": "검색 지우기",
+      "empty": "검색 조건에 맞는 메일이 없어요"
+    },
     "mailNote": {
       "title": "메일 메모",
       "add": "메모 추가",

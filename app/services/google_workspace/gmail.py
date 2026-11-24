@@ -299,6 +299,7 @@ def list_mail_threads_sync(
         labelIds=[label] if label else None,
         q=effective_query or None,
         maxResults=max_results,
+        **({"includeSpamAndTrash": True} if label in {GMAIL_SPAM_LABEL_ID, GMAIL_TRASH_LABEL_ID} else {}),
         **({"pageToken": page_token} if page_token else {}),
     ).execute()
     summaries = result.get("threads", [])

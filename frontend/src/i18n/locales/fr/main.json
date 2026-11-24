@@ -123,6 +123,11 @@
     "close": "Fermer"
   },
   "googleWorkspace": {
+    "mailSearch": {
+      "field": "Rechercher par",
+      "clear": "Effacer la recherche",
+      "empty": "Aucun e-mail correspondant"
+    },
     "mailNote": {
       "title": "Note du message",
       "add": "Ajouter une note",

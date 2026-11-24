@@ -123,6 +123,11 @@
     "close": "关闭"
   },
   "googleWorkspace": {
+    "mailSearch": {
+      "field": "搜索条件",
+      "clear": "清除搜索",
+      "empty": "没有匹配的邮件"
+    },
     "mailNote": {
       "title": "邮件备注",
       "add": "添加备注",

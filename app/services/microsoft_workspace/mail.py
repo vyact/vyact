@@ -110,14 +110,14 @@ def message_query(label: str, query: str = "") -> tuple[str, dict]:
     folder = FOLDERS.get(label, label)
     path = f"/me/mailFolders/{resource_id(folder)}/messages"
     params = {"$top": "30", "$select": MESSAGE_FIELDS, "$orderby": "receivedDateTime desc"}
-    if label in ("STARRED", "ALL") or query:
+    if label in ("STARRED", "ALL", "ALL_MAIL"):
         path = "/me/messages"
-        if label == "STARRED":
+        if label == "STARRED" and not query:
             params["$filter"] = "flag/flagStatus eq 'flagged'"
             params.pop("$orderby")
-        if query:
-            params["$search"] = '"' + query.replace('"', '') + '"'
-            params.pop("$orderby", None)
+    if query:
+        params["$search"] = '"' + query.replace('"', '') + '"'
+        params.pop("$orderby", None)
     return path, params
 
 
@@ -131,6 +131,12 @@ async def messages(label: str = "INBOX", page_token: str = "", query: str = "", 
     if page_token:
         path, params = page_path(page_token, "/me/"), None
     result = await graph(path, params=params, account_id=account_id)
+    if query and label == "STARRED":
+        # Graph search and OData filtering cannot be combined on messages.
+        result["value"] = [
+            item for item in result.get("value", [])
+            if (item.get("flag") or {}).get("flagStatus") == "flagged"
+        ]
     return normalize_message_list(result)
 
 

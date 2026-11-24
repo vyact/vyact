@@ -123,6 +123,11 @@
     "close": "閉じる"
   },
   "googleWorkspace": {
+    "mailSearch": {
+      "field": "検索対象",
+      "clear": "検索をクリア",
+      "empty": "一致するメールはありません"
+    },
     "mailNote": {
       "title": "メールメモ",
       "add": "メモを追加",
