@@ -132,7 +132,7 @@
 .gwp-drive-upload-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border-radius: 6px; color: var(--text); font-size: 13px; text-align: left; white-space: nowrap; }
 .gwp-drive-upload-menu button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .gwp-drive-upload-menu button svg { color: var(--muted); }
-.gwp-mail-toolbar { box-sizing: border-box; flex: 0 0 66px; height: 66px; margin: 0; padding: 0 10px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; }
+.gwp-mail-toolbar { box-sizing: border-box; flex: 0 0 auto; flex-wrap: wrap; min-height: 66px; margin: 0; padding: 8px 10px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; }
 :root[data-theme='light'] .gwp-mail-toolbar { background: var(--gwp-content-surface); }
 .gwp-mail-toolbar > div { display: flex; align-items: center; gap: 4px; }
 .gwp-select-all { display: flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -1069,22 +1069,35 @@
 .gwp-ai-generated-subject { min-width: 0; padding: 0 12px 10px; border-bottom: 1px solid var(--border); }
 .gwp-ai-generated-subject p { margin: 8px 0 0; max-height: 3.3em; overflow-y: auto; overflow-wrap: anywhere; color: var(--text); font-size: 13px; line-height: 1.65; }
 
-.gwp-mail-toolbar > div {
-    min-width: 0;
+.gwp-mail-selection-actions {
+    flex: none;
+}
+
+.gwp-mail-search-actions {
+    flex: 1 1 min-content;
+    justify-content: flex-end;
+}
+
+.gwp-mail-search-actions > .gwp-refresh {
+    flex: none;
 }
 
 .gwp-mail-search {
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 4px;
-    min-width: 0;
+    min-width: min-content;
     color: var(--text);
 }
 
 .gwp-mail-search > input {
     box-sizing: border-box;
-    width: 150px;
-    min-width: 0;
+    flex: 1 1 225px;
+    width: 72px;
+    min-width: 72px;
+    max-width: 225px;
     height: 32px;
     padding: 0 8px;
     border: 1px solid var(--border);

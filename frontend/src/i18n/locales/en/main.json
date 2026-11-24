@@ -125,7 +125,6 @@
   "googleWorkspace": {
     "mailSearch": {
       "field": "Search by",
-      "clear": "Clear search",
       "empty": "No matching mail"
     },
     "mailNote": {

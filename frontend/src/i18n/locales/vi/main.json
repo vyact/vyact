@@ -125,7 +125,6 @@
   "googleWorkspace": {
     "mailSearch": {
       "field": "Tìm theo",
-      "clear": "Xóa tìm kiếm",
       "empty": "Không tìm thấy email phù hợp"
     },
     "mailNote": {
