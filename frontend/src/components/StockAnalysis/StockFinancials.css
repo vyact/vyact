@@ -16,7 +16,16 @@
 
 .stock-financials-controls {justify-content: flex-end; margin-bottom: 12px;}
 .stock-financials-statement {margin-bottom: 28px;}
-.stock-financials-statement h3 {margin: 0 0 12px; font-size: 14px; font-weight: 600;}
+.stock-financials-statement-heading {
+    --stock-chat-attachment-size: 22px;
+    --stock-chat-attachment-icon-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--stock-chat-attachment-size);
+    margin-bottom: 12px;
+}
+.stock-financials-statement h3 {margin: 0; font-size: 14px; font-weight: 600;}
 .stock-financials-value {display: block; font-weight: 550;}
 .stock-financials-currency {display: block; margin-top: 4px; color: var(--muted); font-size: 10px; font-weight: 400;}
 .stock-financials-changes:empty {display: none;}
@@ -42,3 +51,5 @@
 }
 @keyframes stock-financials-spin {to {transform: rotate(360deg);}}
 .stock-financials [data-supplemental="true"] {background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));}
+
+.stock-financials table[data-capturing] th:first-child {position: static;}

@@ -1,3 +1,5 @@
+import type {MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
+import StockChatAttachmentButton from './StockChatAttachmentButton';
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {RefreshCw} from 'lucide-react';
@@ -8,18 +10,15 @@ import {financialChange, formatFinancialAmount} from '../../utils/stockFinancial
 import type {StockMarket} from '../../services/stockAnalysis';
 import './StockFinancials.css';
 
-const PERIOD_PAGE_SIZE = 5;
+const VISIBLE_PERIOD_COUNT = 5;
 
-export default function StockFinancials({symbol, market}: {symbol: string; market: StockMarket}) {
+export default function StockFinancials({symbol, market, attachment}: {symbol: string; market: StockMarket; attachment?: MarketSummaryAttachmentAction | null}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.financials.${key}`);
     const [frequency, setFrequency] = useState<FinancialFrequency>('quarterly');
     const [data, setData] = useState<StockFinancialData | null>(null);
     const [error, setError] = useState(false);
     const [retry, setRetry] = useState(0);
-    const periodKey = `${symbol}:${frequency}`;
-    const [periodWindow, setPeriodWindow] = useState({key: periodKey, count: PERIOD_PAGE_SIZE});
-    const visiblePeriodCount = periodWindow.key === periodKey ? periodWindow.count : PERIOD_PAGE_SIZE;
     const forceRefresh = useRef(false);
     const requestRefresh = () => {forceRefresh.current = true; setRetry(value => value + 1);};
     useEffect(() => {
@@ -44,7 +43,7 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
     const refreshInProgress = !error && (!data || data.refreshing === true);
     const percentFormatter = new Intl.NumberFormat(language, {maximumFractionDigits: 1, signDisplay: 'exceptZero'});
     const statements = Object.keys(FINANCIAL_METRICS) as (keyof typeof FINANCIAL_METRICS)[];
-    return <section className="stock-financials" data-market={market} aria-label={tr('tab')} aria-busy={!data && !error}>
+    return <section className="stock-financials" data-symbol={symbol} data-market={market} aria-label={tr('tab')} aria-busy={!data && !error}>
         <div className="stock-financials-controls">
             <div className="stock-financials-status" role="status">
                 <button type="button" className="modal-action-cancel" disabled={refreshInProgress} aria-label={tr(refreshInProgress ? 'refreshing' : 'refresh')} onClick={requestRefresh}>
@@ -59,9 +58,16 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
         {error && <div role="alert"><p>{tr('error')}</p><button type="button" className="modal-action-cancel" onClick={requestRefresh}>{t('stockAnalysis.retry')}</button></div>}
         {data && statements.map(statement => {
             const periods = data.statements[statement];
-            const visiblePeriods = periods.slice(0, visiblePeriodCount);
-            return <section className="stock-financials-statement" key={statement} aria-labelledby={`financial-${statement}-${symbol}`}>
-                <h3 id={`financial-${statement}-${symbol}`}>{tr(statement)}</h3>
+            const visiblePeriods = periods.slice(0, VISIBLE_PERIOD_COUNT);
+            const statementId = `financial-${statement}-${symbol}-${frequency}`;
+            const title = tr(statement);
+            return <section id={statementId} className="stock-financials-statement" key={statement} aria-labelledby={`${statementId}-title`}>
+                <div className="stock-financials-statement-heading">
+                    <h3 id={`${statementId}-title`}>{title}</h3>
+                    {attachment?.supportsTarget && periods.length > 0 && <StockChatAttachmentButton
+                        label={`${t('documentModal.attachToChat')} · ${title}`}
+                        disabled={attachment.disabled} capturing={attachment.capturing} onClick={() => attachment.capture(statementId)}/>}
+                </div>
                 {!periods.length ? <p className="stock-financials-note">{tr('empty')}</p> : <div className="stock-financials-table-wrap"><table>
                     <thead><tr><th scope="col">{tr('metric')}{data.currency && <small className="stock-financials-currency">{data.currency}</small>}</th>{visiblePeriods.map(period => <th scope="col" key={period.period} data-supplemental={period.source === 'DART' || undefined}>{new Intl.DateTimeFormat(language, {year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC'}).format(new Date(`${period.period}T00:00:00Z`))}</th>)}</tr></thead>
                     <tbody>{FINANCIAL_METRICS[statement].map(metric => <tr key={metric}><th scope="row">{tr(metric)}</th>{visiblePeriods.map(period => <td key={period.period} data-supplemental={period.source === 'DART' || undefined}>
@@ -78,7 +84,6 @@ export default function StockFinancials({symbol, market}: {symbol: string; marke
                 </table></div>}
             </section>;
         })}
-        {data && statements.some(kind => data.statements[kind].length > visiblePeriodCount) && <button type="button" className="modal-action-cancel" onClick={() => setPeriodWindow({key: periodKey, count: visiblePeriodCount + PERIOD_PAGE_SIZE})}>{tr('olderPeriods')}</button>}
         <p className="stock-financials-note">{tr('source')}</p>
     </section>;
 }

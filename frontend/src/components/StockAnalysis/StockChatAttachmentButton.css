@@ -1,0 +1,30 @@
+.modal-action-cancel.stock-chat-attachment-button {
+    --chat-attachment-fill: #6d28d9;
+    --chat-attachment-hover: #7c3aed;
+    display: inline-grid;
+    place-items: center;
+    width: var(--stock-chat-attachment-size, 28px);
+    height: var(--stock-chat-attachment-size, 28px);
+    min-height: var(--stock-chat-attachment-size, 28px);
+    padding: 0;
+    color: #fff;
+    border: 1px solid var(--chat-attachment-hover);
+    background: var(--chat-attachment-fill);
+}
+.modal-action-cancel.stock-chat-attachment-button:hover:not(:disabled) {
+    color: #fff;
+    background: var(--chat-attachment-hover);
+}
+.modal-action-cancel.stock-chat-attachment-button:focus-visible {
+    outline: 2px solid var(--chat-attachment-hover);
+    outline-offset: 2px;
+}
+
+.stock-chat-attachment-button svg {
+    width: var(--stock-chat-attachment-icon-size, 16px);
+    height: var(--stock-chat-attachment-icon-size, 16px);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .stock-chat-attachment-spinner {animation: stock-chat-attachment-spin .8s linear infinite;}
+}
+@keyframes stock-chat-attachment-spin {to {transform: rotate(360deg);}}

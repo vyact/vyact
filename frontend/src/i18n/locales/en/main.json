@@ -1989,7 +1989,6 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
-      "olderPeriods": "Show older periods",
       "checkedAt": "Last checked",
       "refreshing": "Updating…",
       "refreshFailed": "Update failed. Showing saved data.",

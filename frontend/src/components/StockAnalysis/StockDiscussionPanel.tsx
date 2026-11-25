@@ -37,7 +37,7 @@ type AnalysisVisibility = Pick<ComponentProps<typeof StockDiscussionSidebar>, 'i
 export default function StockDiscussionPanel({market, directory, captureChart, captureMap, captureMarketSummary, onMarketSummaryAttachmentChange, renderAnalysis}: {
     market: StockMarket;
     directory: StockSymbol[];
-    captureMarketSummary?: () => Promise<Blob | null>;
+    captureMarketSummary?: (target?: string) => Promise<Blob | null>;
     onMarketSummaryAttachmentChange: (attach: MarketSummaryAttachmentAction | null) => void;
     captureMap?: (() => HTMLCanvasElement | null) | null;
     captureChart?: ComponentProps<typeof StockDiscussionSidebar>['captureChart'];

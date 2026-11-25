@@ -1987,7 +1987,6 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
-      "olderPeriods": "Hiển thị các kỳ trước",
       "checkedAt": "Kiểm tra lần cuối",
       "refreshing": "Đang cập nhật…",
       "refreshFailed": "Cập nhật thất bại. Đang hiển thị dữ liệu đã lưu.",

@@ -1987,7 +1987,6 @@
     "indexNikkei225": "日経平均株価",
 
     "financials": {
-      "olderPeriods": "過去の期間をさらに表示",
       "checkedAt": "最終確認",
       "refreshing": "更新中…",
       "refreshFailed": "更新に失敗しました。保存済みデータを表示しています。",

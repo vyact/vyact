@@ -1987,7 +1987,6 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
-      "olderPeriods": "แสดงช่วงเวลาก่อนหน้า",
       "checkedAt": "ตรวจสอบล่าสุด",
       "refreshing": "กำลังอัปเดต…",
       "refreshFailed": "อัปเดตล้มเหลว กำลังแสดงข้อมูลที่บันทึกไว้",

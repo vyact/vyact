@@ -1,7 +1,7 @@
 import type {MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import {useEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {hierarchy, treemap, type HierarchyRectangularNode} from 'd3-hierarchy';
-import {ArrowLeft, Paperclip} from 'lucide-react';
+import {ArrowLeft} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -28,6 +28,7 @@ import useMarketOpeningRefresh from './useMarketOpeningRefresh';
 import StockMapSearchDialog from './StockMapSearchDialog';
 import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import {captureSectorMap} from './sectorMapSnapshot';
+import StockChatAttachmentButton from './StockChatAttachmentButton';
 import './StockSectorMap.css';
 
 function tileStyle(node: HierarchyRectangularNode<MapNode>, width: number, height: number) {
@@ -327,11 +328,9 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 <span>{quoteDateLabel}</span>
             </div>}
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
-            {onAttachMarketSummary && <button type="button" className="modal-action-cancel stock-market-summary-attach"
-                aria-label={t('stockAnalysis.community.attachMarketSummary')} title={t('stockAnalysis.community.attachMarketSummary')}
-                disabled={onAttachMarketSummary.disabled} onClick={onAttachMarketSummary.capture}>
-                <Paperclip size={16} aria-hidden="true"/>
-            </button>}
+            {onAttachMarketSummary && <StockChatAttachmentButton
+                label={t('stockAnalysis.community.attachMarketSummary')}
+                disabled={onAttachMarketSummary.disabled} capturing={onAttachMarketSummary.capturing} onClick={() => onAttachMarketSummary.capture()}/>}
             </div>
         </header>
         <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>

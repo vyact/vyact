@@ -1,6 +1,7 @@
 import type {MarketSummaryAttachmentAction} from '../common/CommunityChat/CommunityChat';
 import {isGlobalIndicator, supportsStockFinancials} from '../../utils/stockSymbols';
 import {captureMarketSummary} from './marketSummarySnapshot';
+import {captureFinancialStatement} from './financialStatementSnapshot';
 import GlobalMarketIndicators from './GlobalMarketIndicators';
 import PinnedIndexBar from './PinnedIndexBar';
 import StockExternalLinks from './StockExternalLinks';
@@ -116,7 +117,14 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const registerMarketSummaryAttachment = useCallback((attach: MarketSummaryAttachmentAction | null) => {
         setAttachMarketSummary(attach);
     }, []);
-    const captureSummary = useCallback(() => marketContent.current ? captureMarketSummary(marketContent.current) : Promise.resolve(null), []);
+    const captureSummary = useCallback((target?: string) => {
+        const content = marketContent.current;
+        if (!content) return Promise.resolve(null);
+        if (!target) return captureMarketSummary(content);
+        const statement = document.getElementById(target);
+        if (!statement?.matches('.stock-financials-statement') || !content.contains(statement)) return Promise.resolve(null);
+        return captureFinancialStatement(statement);
+    }, []);
     const [captureMap, setCaptureMap] = useState<(() => HTMLCanvasElement | null) | null>(null);
     const registerMapCapture = useCallback((capture: (() => HTMLCanvasElement | null) | null) => {
         setCaptureMap(() => capture);
@@ -440,14 +448,14 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={instrumentMarket}/>}
             </div>}
             {active && supportsFinancials && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
-                <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
+                <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market} attachment={attachMarketSummary}/>
             </div>}
             {active && detailTab === 'news' && <div className="stock-analysis-detail-panel">
-                <StockNews key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol}/>
+                <StockNews key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} attachment={attachMarketSummary?.attachNews}/>
             </div>}
         </main>
         <StockDiscussionPanel market={active ? instrumentMarket : market} directory={symbols}
-            captureMarketSummary={!active && !showEmptyGroups ? captureSummary : undefined}
+            captureMarketSummary={(!active && !showEmptyGroups) || (active && supportsFinancials && detailTab === 'financials') ? captureSummary : undefined}
             onMarketSummaryAttachmentChange={registerMarketSummaryAttachment}
             captureMap={!active && !showEmptyGroups ? captureMap : null}
             captureChart={active && detailTab === 'chart' && rows?.length ? captureChart : undefined}

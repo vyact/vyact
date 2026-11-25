@@ -4,9 +4,9 @@
 .stock-news .stock-news-body {gap: 14px; min-height: 0; overflow: hidden;}
 .stock-news ul {list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; scrollbar-gutter: stable;}
 .stock-news li {padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2);}
-.stock-news li > a {color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere;}
-.stock-news li > a:hover {color: var(--accent); text-decoration: underline;}
-.stock-news li > a:focus-visible {outline: 2px solid var(--accent); outline-offset: 3px;}
+.stock-news-heading > a {color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere;}
+.stock-news-heading > a:hover {color: var(--accent); text-decoration: underline;}
+.stock-news-heading > a:focus-visible {outline: 2px solid var(--accent); outline-offset: 3px;}
 .stock-news-meta {display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; color: var(--text-muted); font-size: 12px;}
 .stock-news li > p {margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere;}
 .stock-news-note {margin: 0; color: var(--text-muted); font-size: 12px;}
@@ -14,3 +14,13 @@
 .stock-news-empty-icon {display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 64px; height: 64px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface2);}
 .stock-news-empty p {margin: 0; max-width: 360px; color: var(--text-secondary); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere;}
 .stock-news-error {display: flex; align-items: center; gap: 12px;}
+
+.stock-news-heading {
+    --stock-chat-attachment-size: 22px;
+    --stock-chat-attachment-icon-size: 13px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--stock-chat-attachment-size);
+    align-items: start;
+    gap: 8px;
+    min-height: var(--stock-chat-attachment-size);
+}

@@ -1990,7 +1990,6 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
-      "olderPeriods": "Afficher les périodes antérieures",
       "checkedAt": "Dernière vérification",
       "refreshing": "Mise à jour…",
       "refreshFailed": "Échec de la mise à jour. Affichage des données enregistrées.",

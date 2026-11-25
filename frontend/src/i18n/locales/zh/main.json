@@ -1987,7 +1987,6 @@
     "indexNikkei225": "日经225",
 
     "financials": {
-      "olderPeriods": "显示更早期间",
       "checkedAt": "最后检查",
       "refreshing": "正在更新…",
       "refreshFailed": "更新失败，正在显示已保存数据。",
