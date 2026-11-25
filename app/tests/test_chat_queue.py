@@ -127,3 +127,24 @@ async def test_community_translation_uses_an_isolated_prompt(monkeypatch):
     assert kwargs['raise_on_error']
     for option in ('use_tools', 'inject_user_profile', 'include_skills', 'include_response_language', 'reasoning'):
         assert kwargs[option] is False
+
+
+@pytest.mark.asyncio
+async def test_community_article_translation_batches_fields_in_order(monkeypatch):
+    monkeypatch.setattr(chat, 'chat_request_lock', asyncio.Lock())
+    llm = AsyncMock(return_value='["제목", "요약"]')
+    monkeypatch.setattr(chat, 'query_llm', llm)
+    request = AsyncMock()
+    request.is_disconnected.return_value = False
+    payload = chat.CommunityArticleTranslationRequest(fields=['Headline', 'Summary'], target_lang='Korean')
+
+    result = await chat.translate_community_message(payload, request)
+    assert result == {'translated': '["제목", "요약"]'}
+    llm.assert_awaited_once()
+    assert llm.await_args.args[0].endswith('["Headline", "Summary"]')
+    assert llm.await_args.kwargs['use_tools'] is False
+
+    llm.return_value = '["제목"]'
+    with pytest.raises(chat.HTTPException) as error:
+        await chat.translate_community_message(payload, request)
+    assert error.value.status_code == 502

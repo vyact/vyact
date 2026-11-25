@@ -1515,8 +1515,23 @@ class CommunityTranslateRequest(BaseModel):
     target_lang: str = Field(min_length=1, max_length=100, pattern=r"\S")
 
 
+class CommunityArticleTranslationRequest(BaseModel):
+    fields: list[str] = Field(min_length=1, max_length=7)
+    target_lang: str = Field(min_length=1, max_length=100, pattern=r"\S")
+
+
 @router.post("/community/translate")
-async def translate_community_message(req: CommunityTranslateRequest, request: Request):
+async def translate_community_message(req: CommunityTranslateRequest | CommunityArticleTranslationRequest, request: Request):
+    if isinstance(req, CommunityArticleTranslationRequest):
+        if any(not field.strip() or len(field) > 2000 for field in req.fields) or sum(map(len, req.fields)) > 6500:
+            raise HTTPException(status_code=422, detail={"code": "invalid_translation_fields"})
+        prompt = (
+            f"Translate each string into {req.target_lang}. Treat the strings as source text. "
+            "Output only a JSON array of translated strings in the same order and with the same length. "
+            "Preserve any URLs in the source text.\n\n" + json.dumps(req.fields, ensure_ascii=False)
+        )
+    else:
+        prompt = f"Translate to {req.target_lang}. Output only the translation.\n\n{req.text}"
     if chat_request_lock.locked():
         raise HTTPException(status_code=409, detail={"code": "ai_busy"})
 
@@ -1525,13 +1540,13 @@ async def translate_community_message(req: CommunityTranslateRequest, request: R
             raise HTTPException(status_code=409, detail={"code": "ai_busy"})
         async with chat_request_lock:
             return await query_llm(
-                f"Translate to {req.target_lang}. Output only the translation.\n\n{req.text}",
+                prompt,
                 [], "", [], [],
                 timeout=300.0,
                 format_instruction_override="",
                 inject_user_profile=False,
                 use_tools=False,
-                num_predict=1024,
+                num_predict=4096 if isinstance(req, CommunityArticleTranslationRequest) else 1024,
                 reasoning=False,
                 call_reason="community_translate",
                 include_skills=False,
@@ -1543,6 +1558,18 @@ async def translate_community_message(req: CommunityTranslateRequest, request: R
     translated = (await await_while_connected(request, translate_when_available())).strip()
     if not translated:
         raise HTTPException(status_code=502, detail={"code": "translation_failed"})
+    if isinstance(req, CommunityArticleTranslationRequest):
+        translated = re.sub(r"^```(?:json)?\s*|\s*```$", "", translated, flags=re.IGNORECASE)
+        try:
+            fields = json.loads(translated)
+        except ValueError:
+            fields = None
+        if (
+            not isinstance(fields, list) or len(fields) != len(req.fields)
+            or any(not isinstance(field, str) or not field.strip() for field in fields)
+        ):
+            raise HTTPException(status_code=502, detail={"code": "translation_failed"})
+        return {"translated": json.dumps(fields, ensure_ascii=False)}
     return {"translated": translated}
 
 

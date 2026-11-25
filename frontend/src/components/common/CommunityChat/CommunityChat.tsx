@@ -161,7 +161,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
         const resolveRoomStockNames = createRoomStockNameResolver(language, translationSession.signal,
             key => i18n.t(`stockAnalysis.${key}`, {ns: 'main', lng: language}));
         let translating = false;
-        const translateMessage = async (frame: HTMLIFrameElement, requestId: string, text: string, targetLanguage: string) => {
+        const translateMessage = async (frame: HTMLIFrameElement, requestId: string, input: {text: string} | {fields: string[]}, targetLanguage: string) => {
             const reply = (result: {translation?: string; error?: 'busy' | 'failed'}) => {
                 if (!translationSession.signal.aborted) {
                     frame.contentWindow?.postMessage({type: 'vyact:community-translation-result', requestId, language: targetLanguage, ...result}, origin);
@@ -178,7 +178,7 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     signal: AbortSignal.any([translationSession.signal, AbortSignal.timeout(TRANSLATION_TIMEOUT_MS)]),
-                    body: JSON.stringify({text, target_lang: target}),
+                    body: JSON.stringify({...input, target_lang: target}),
                 });
                 if (!response.ok) {
                     reply({error: response.status === 409 ? 'busy' : 'failed'});
@@ -345,12 +345,17 @@ export default function CommunityChat({entry = 'main', title, unavailableMessage
                 return;
             }
             if (event.data?.type === 'vyact:community-translate-message') {
-                const {requestId, text, targetLanguage} = event.data;
+                const {requestId, text, fields, targetLanguage} = event.data;
+                const validFields = Array.isArray(fields) && fields.length > 0 && fields.length <= 7 &&
+                    fields.every(field => typeof field === 'string' && field.trim() && field.length <= MAX_COMMUNITY_MESSAGE_LENGTH) &&
+                    fields.reduce((length, field) => length + field.length, 0) <= 6500;
+                const input = validFields ? {fields}
+                    : typeof text === 'string' && text.length <= MAX_COMMUNITY_MESSAGE_LENGTH && text.trim() ? {text} : undefined;
                 if (typeof requestId === 'string' && /^[\da-f-]{36}$/i.test(requestId)
-                    && typeof text === 'string' && text.length <= MAX_COMMUNITY_MESSAGE_LENGTH && text.trim()) {
+                    && input) {
                     const target = targetLanguage ?? language;
                     if (typeof target === 'string' && TRANSLATION_LANGUAGES.has(target)) {
-                        void translateMessage(frame, requestId, text, target);
+                        void translateMessage(frame, requestId, input, target);
                     }
                 }
                 return;
